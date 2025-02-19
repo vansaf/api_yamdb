@@ -1,9 +1,9 @@
-from compositions.models import Review, Comment
+from reviews.models import Review, Comment
 from .serializers import ReviewSerializer, CommentSerializer
 from .permission import IsAuthorOrModeratorOrAdmin, IsActionAllowed
-from .pagination import ReviewPagination
+from .pagination import CustomPagination
 from rest_framework import serializers
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, filters
 
 
 class ReviewsViewSet(viewsets.ModelViewSet):
@@ -13,24 +13,26 @@ class ReviewsViewSet(viewsets.ModelViewSet):
         IsAuthorOrModeratorOrAdmin,
         IsActionAllowed
     ]
-    pagination_class = ReviewPagination
+    pagination_class = CustomPagination
+    filter_backends = [filters.OrderingFilter]
+    filterset_fields = ('pub_date', 'score')
 
     def perform_create(self, serializer):
-        """Создание отзыва с ограничением: один пользователь — один отзыв на произведение."""
-        work_id = self.kwargs.get('work_id')
+        """Создание отзыва с ограничением: один пользователь — один отзыв"""
+        review_id = self.kwargs.get('review_id')
         user = self.request.user
 
-        if Review.objects.filter(author=user, work_id=work_id).exists():
+        if Review.objects.filter(author=user, review_id=review_id).exists():
             raise serializers.ValidationError(
                 "Вы уже оставили отзыв на это произведение."
             )
 
-        serializer.save(author=user, work_id=work_id)
+        serializer.save(author=user, review_id=review_id)
 
     def get_queryset(self):
         """Фильтрует отзывы по ID произведения."""
-        work_id = self.kwargs.get('work_id')
-        return Review.objects.filter(work_id=work_id)
+        title_id = self.kwargs.get('title_id')
+        return Review.objects.filter(title_id=title_id)
 
 
 class CommentsViewSet(viewsets.ModelViewSet):
@@ -40,7 +42,9 @@ class CommentsViewSet(viewsets.ModelViewSet):
         IsAuthorOrModeratorOrAdmin,
         IsActionAllowed
     ]
-    pagination_class = ReviewPagination
+    pagination_class = CustomPagination
+    filter_backends = [filters.OrderingFilter]
+    filterset_fields = ('pub_date')
 
     def get_queryset(self):
         """Фильтрует коментарии по ID произведения."""
