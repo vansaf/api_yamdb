@@ -12,14 +12,15 @@ class Category(models.Model):
 
     Поля:
     name - название категории
-    slug - уникальный идентификатор (URL-friendly), 
+    slug - уникальный идентификатор (URL-friendly),
            удобен для формирования адресов.
     """
     name = models.CharField(max_length=256)
     slug = models.SlugField(unique=True)
 
     def __str__(self):
-        # Метод, который возвращает строковое представление объекта (удобно для админки)
+        # Метод, который возвращает строковое представление объекта
+        # (удобно для админки)
         return self.name
 
 
@@ -47,7 +48,7 @@ class Title(models.Model):
     year - год выпуска
     description - описание (необязательно)
     category - связь с моделью Category (ForeignKey)
-    genre - связь с моделью Genre (ManyToManyField, 
+    genre - связь с моделью Genre (ManyToManyField,
             т.к. произведение может иметь несколько жанров)
     """
     name = models.CharField(max_length=256)
@@ -55,13 +56,16 @@ class Title(models.Model):
     description = models.TextField(blank=True, null=True)
     category = models.ForeignKey(
         Category,
-        on_delete=models.SET_NULL,  # Если удалить категорию, поле category станет null
+        # Если удалить категорию, поле category станет null
+        on_delete=models.SET_NULL,
         null=True,
-        related_name='titles'       # Позволяет обратный доступ: category.titles.all()
+        # Позволяет обратный доступ: category.titles.all()
+        related_name='titles'
     )
     genre = models.ManyToManyField(
-        Genre, 
-        related_name='titles'       # Обратный доступ: genre.titles.all()
+        Genre,
+        # Обратный доступ: genre.titles.all()
+        related_name='titles'
     )
 
     def __str__(self):
