@@ -1,10 +1,46 @@
-from reviews.models import Review, Comment
-from .serializers import ReviewSerializer, CommentSerializer
+"""
+Здесь описываются классы ViewSet,
+которые определяют логику обработки запросов
+к моделям Category, Genre и Title.
+"""
+
+# DRF-класс для создания набора представлений
+from rest_framework import viewsets, serializers, filters
+# Импортируем наши модели
+from reviews.models import Category, Genre, Title, Review, Comment
+# Импорт сериализаторов
+from .serializers import CategorySerializer, GenreSerializer, TitleSerializer, ReviewSerializer, CommentSerializer
 from .permissions import CustomReviewAndCommentPermission
 from .pagination import CustomPagination
-from rest_framework import serializers
-from rest_framework import viewsets, filters
+
 from django_filters.rest_framework import DjangoFilterBackend
+
+class CategoryViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet для работы с категориями (Category).
+    Наследуется от ModelViewSet,
+    который предоставляет стандартные действия:
+    list(), create(), retrieve(), update(), partial_update(), destroy().
+    """
+    queryset = Category.objects.all()  # Указываем, какие данные обрабатываем
+    serializer_class = CategorySerializer  # Какой сериализатор использовать
+
+
+class GenreViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet для работы с жанрами (Genre).
+    Аналогично CategoryViewSet.
+    """
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+
+
+class TitleViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet для работы с произведениями (Title).
+    """
+    queryset = Title.objects.all()
+    serializer_class = TitleSerializer
 
 
 class ReviewsViewSet(viewsets.ModelViewSet):
