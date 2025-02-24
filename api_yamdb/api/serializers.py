@@ -7,11 +7,8 @@
 # DRF-библиотека для сериализации
 from rest_framework import serializers
 # Импорт моделей
-from reviews.models import Category, Genre, Title, Review, Comment
-from django.contrib.auth import get_user_model
+from reviews.models import Category, Genre, Title, Review, Comment, User
 
-
-User = get_user_model()
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -54,7 +51,7 @@ class TitleSerializer(serializers.ModelSerializer):
 class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор модели отзывов"""
     author = serializers.SlugRelatedField(
-        slug_fields='username',
+        slug_field='username',
         read_only=True
     )
 
@@ -66,11 +63,21 @@ class ReviewSerializer(serializers.ModelSerializer):
 class CommentSerializer(serializers.ModelSerializer):
     """Сериализатор модели комментариев"""
     author = serializers.SlugRelatedField(
-        slug_fields='username',
+        slug_field='username',
         read_only=True
     )
 
     class Meta:
         model = Comment
-        develop
         fields = '__all__'
+
+
+class SignUpSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('email', 'username')
+
+
+#class GetTokenSerializer(serializers.ModelSerializer):
+#    username = serializers.Charfield()
+#    confirmation_code = serializers.Charfield()

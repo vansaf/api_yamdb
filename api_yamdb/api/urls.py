@@ -9,7 +9,7 @@ from django.urls import path, include
 # Роутер DRF для автоматического создания маршрутов
 from rest_framework import routers
 from rest_framework.routers import DefaultRouter
-from .views import CategoryViewSet, GenreViewSet, TitleViewSet
+from .views import CategoryViewSet, GenreViewSet, TitleViewSet, SignUpView
 
 # Создаём роутер - объект, который автоматически сгенерирует
 # стандартные маршруты CRUD (Create, Read, Update, Delete)
@@ -39,7 +39,7 @@ router.register('titles', TitleViewSet)
 urlpatterns = [
     path('v1/', include(router.urls)),
     path('v1/auth/signup/', SignUpView.as_view(), name='signup'),
-    path('v1/auth/token/', GetTokenView.as_view(), name='token'),
+    #path('v1/auth/token/', GetTokenView.as_view(), name='token'),
 ]
 
 urlpatterns += router_v1.urls

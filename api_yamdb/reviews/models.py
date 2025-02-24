@@ -6,14 +6,34 @@ from django.contrib.auth.models import AbstractUser
 
 
 class CustomUser(AbstractUser):
+
+    class RoleChoices(models.TextChoices):
+
+        ADMIN = 'admin', 'Admin'
+        MODERATOR = 'moderator', 'Moderator'
+        USER = 'user', 'User'
+
     username = models.CharField('Логин', max_length=150,
-                                unique=True, null=False)
+                                unique=True, blank=False)
     email = models.EmailField('Электронная почта',
-                              max_length=254, unique=True, null=False)
+                              max_length=254, unique=True, blank=False)
     first_name = models.TextField('Имя', max_length=150, blank=True)
     last_name = models.TextField('Фамилия', max_length=150, blank=True)
     bio = models.TextField('Биография', blank=True)
-    role = models.CharField('Статус', default='user')
+    role = models.CharField('Статус',
+                            max_length=100,
+                            choices=RoleChoices.choices,
+                            default=RoleChoices.USER)
+
+    @property
+    def is_admin(self):
+        """Возвращает True, если роль пользователя — Admin."""
+        return self.role == self.RoleChoices.ADMIN
+
+    @property
+    def is_moderator(self):
+        """Возвращает True, если роль пользователя — Moderator."""
+        return self.role == self.RoleChoices.MODERATOR
 
     def __str__(self):
         return self.username
