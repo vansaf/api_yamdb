@@ -1,29 +1,6 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 
-class CustomReviewAndCommentPermission(BasePermission):
-    """
-    Получить список всех отзывов - права доступа: Доступно без токена.
-    Добавить новый отзыв - права доступа: Аутентифицированные пользователи.
-    Получить отзыв по id для указанного произведения - права доступа: Доступно без токена.
-    Частично обновить отзыв по id - права доступа: Автор отзыва, модератор или администратор.
-    Удалить отзыв по id - права доступа: Автор отзыва, модератор или администратор.
-    """
-    def has_permission(self, request, view):
-        if view.action in ['list', 'retrieve']:
-            return True
-        if view.action == 'create':
-            return request.user and request.user.is_authenticated
-        return True
-
-    def has_object_permission(self, request, view, obj):
-        if view.action in ['retrieve']:
-            return True
-        if view.action in ['partial_update', 'destroy']:
-            return request.user == obj.author or request.user.is_staff
-        return False
-
-
 class IsAdminIsModeratorIsAuthorOrReadOnly(BasePermission):
     """Класс проверки выполняется ли одно из четырех условий:
     - администратор
@@ -31,6 +8,7 @@ class IsAdminIsModeratorIsAuthorOrReadOnly(BasePermission):
     - автор объекта
     - действия с объектом запрошены только на чтение
     """
+
     def has_object_permission(self, request, view, obj):
         return (request.method in SAFE_METHODS
                 or request.user.is_admin
