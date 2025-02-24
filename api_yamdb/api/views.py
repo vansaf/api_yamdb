@@ -4,21 +4,33 @@
 к моделям Category, Genre и Title.
 """
 
-from rest_framework import (generics,
-                            viewsets,
-                            serializers,
-                            filters,
-                            permissions,
-                            status)
 from rest_framework.response import Response
 
 from reviews.models import Category, Genre, Title, Review, Comment, User
 
-from .serializers import SignUpSerializer, CategorySerializer, GenreSerializer, TitleSerializer, ReviewSerializer, CommentSerializer
-from .permissions import CustomReviewAndCommentPermission
-from .pagination import CustomPagination
-from .utils import generate_confirmation_code, send_confirmation_code
+
+
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import (
+    filters,
+    generics,
+    permissions,
+    serializers,
+    status,
+    viewsets,
+)
+
+from .pagination import CustomPagination
+from .permissions import CustomReviewAndCommentPermission
+from .serializers import (
+    CategorySerializer,
+    CommentSerializer,
+    GenreSerializer,
+    ReviewSerializer,
+    SignUpSerializer,
+    TitleSerializer
+)
+from .utils import generate_confirmation_code, send_confirmation_code
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -50,6 +62,9 @@ class TitleViewSet(viewsets.ModelViewSet):
 
 
 class ReviewsViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet для работы с отзывами (Reviews).
+    """
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
     permission_classes = CustomReviewAndCommentPermission
@@ -65,7 +80,7 @@ class ReviewsViewSet(viewsets.ModelViewSet):
 
         if Review.objects.filter(author=user, review_id=review_id).exists():
             raise serializers.ValidationError(
-                "Вы уже оставили отзыв на это произведение."
+                'Вы уже оставили отзыв на это произведение.'
             )
 
         serializer.save(author=user, review_id=review_id)
@@ -77,6 +92,9 @@ class ReviewsViewSet(viewsets.ModelViewSet):
 
 
 class CommentsViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet для работы с коментариями (Comments).
+    """
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     permission_classes = CustomReviewAndCommentPermission
@@ -89,6 +107,7 @@ class CommentsViewSet(viewsets.ModelViewSet):
         """Фильтрует коментарии по ID произведения."""
         review_id = self.kwargs.get('review_id')
         return Comment.objects.filter(review__id=review_id)
+
 
 
 class SignUpView(generics.CreateAPIView):
@@ -119,3 +138,4 @@ class SignUpView(generics.CreateAPIView):
    #     self.request.session['confirmation_code'] = confirmation_code
    #     send_confirmation_code(user.email, confirmation_code)
    #     return Response(status=status.HTTP_201_CREATED)
+
