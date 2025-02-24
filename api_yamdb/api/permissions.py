@@ -2,7 +2,13 @@ from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 
 class CustomReviewAndCommentPermission(BasePermission):
-
+    """
+    Получить список всех отзывов - права доступа: Доступно без токена.
+    Добавить новый отзыв - права доступа: Аутентифицированные пользователи.
+    Получить отзыв по id для указанного произведения - права доступа: Доступно без токена.
+    Частично обновить отзыв по id - права доступа: Автор отзыва, модератор или администратор.
+    Удалить отзыв по id - права доступа: Автор отзыва, модератор или администратор.
+    """
     def has_permission(self, request, view):
         if view.action in ['list', 'retrieve']:
             return True

@@ -9,7 +9,14 @@ from django.urls import path, include
 # Роутер DRF для автоматического создания маршрутов
 from rest_framework import routers
 from rest_framework.routers import DefaultRouter
-from .views import CategoryViewSet, GenreViewSet, TitleViewSet, SignUpView
+from .views import (
+    CategoryViewSet,
+    GenreViewSet,
+    TitleViewSet,
+    SignUpView,
+    ReviewsViewSet,
+    CommentsViewSet
+)
 
 # Создаём роутер - объект, который автоматически сгенерирует
 # стандартные маршруты CRUD (Create, Read, Update, Delete)
@@ -33,6 +40,11 @@ router.register('genres', GenreViewSet)
 # Регистрируем ViewSet для произведений под адресом "titles".
 router.register('titles', TitleViewSet)
 
+# Регистрируем ViewSet для произведений под адресом "reviews".
+router.register('reviews', ReviewsViewSet)
+
+# Регистрируем ViewSet для произведений под адресом "comments".
+router.register('reviews', CommentsViewSet)
 # Подключаем все маршруты роутера под префиксом /v1/.
 # То есть, всё, что начинается на "/v1/..." в адресе,
 # будет обрабатываться соответствующими ViewSet'ами.
