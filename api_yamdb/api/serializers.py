@@ -4,11 +4,15 @@
 чтобы их можно было отправлять/получать по API.
 """
 
-# DRF-библиотека для сериализации
 from rest_framework import serializers
-# Импорт моделей
-from reviews.models import Category, Genre, Title, Review, Comment, User
 
+from reviews.models import Category, Comment, Genre, Review, Title, User
+
+
+class SignUpSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('email', 'username')
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -49,7 +53,7 @@ class TitleSerializer(serializers.ModelSerializer):
 
 
 class ReviewSerializer(serializers.ModelSerializer):
-    """Сериализатор модели отзывов"""
+    """Сериализатор модели отзывов (Reviews)."""
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True
@@ -61,7 +65,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    """Сериализатор модели комментариев"""
+    """Сериализатор модели комментариев (Comments)."""
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True
@@ -70,13 +74,6 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = '__all__'
-
-
-class SignUpSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ('email', 'username')
-
 
 #class GetTokenSerializer(serializers.ModelSerializer):
 #    username = serializers.Charfield()
