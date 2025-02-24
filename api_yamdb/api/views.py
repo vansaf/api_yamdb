@@ -5,15 +5,18 @@
 """
 
 # DRF-класс для создания набора представлений
-from rest_framework import viewsets, serializers, filters
+from rest_framework import generics, viewsets, serializers, filters, permissions, status
+from rest_framework.response import Response
 # Импортируем наши модели
-from reviews.models import Category, Genre, Title, Review, Comment
+from reviews.models import Category, Genre, Title, Review, Comment, User
 # Импорт сериализаторов
-from .serializers import CategorySerializer, GenreSerializer, TitleSerializer, ReviewSerializer, CommentSerializer
+from .serializers import SignUpSerializer, CategorySerializer, GenreSerializer, TitleSerializer, ReviewSerializer, CommentSerializer
 from .permissions import CustomReviewAndCommentPermission
 from .pagination import CustomPagination
-
+from .utils import generate_confirmation_code, send_confirmation_code
 from django_filters.rest_framework import DjangoFilterBackend
+
+
 
 class CategoryViewSet(viewsets.ModelViewSet):
     """
@@ -83,3 +86,16 @@ class CommentsViewSet(viewsets.ModelViewSet):
         """Фильтрует коментарии по ID произведения."""
         review_id = self.kwargs.get('review_id')
         return Comment.objects.filter(review__id=review_id)
+
+
+class SignUpView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = SignUpSerializer
+    permission_classes = (permissions.AllowAny, )
+
+    def perform_create(self, serializer):
+        user = serializer.save()
+        confirmation_code = generate_confirmation_code()
+        self.request.session['confirmation_code'] = confirmation_code
+        send_confirmation_code(user.email, confirmation_code)
+        return Response(status=status.HTTP_201_CREATED)
