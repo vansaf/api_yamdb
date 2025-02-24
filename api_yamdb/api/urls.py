@@ -5,11 +5,12 @@
 """
 
 # Функции для описания маршрутов
-from django.urls import path, include
-# Роутер DRF для автоматического создания маршрутов
+from django.urls import include, path
 from rest_framework import routers
 from rest_framework.routers import DefaultRouter
-from .views import CategoryViewSet, GenreViewSet, TitleViewSet, SignUpView
+
+from .views import CategoryViewSet, GenreViewSet, SignUpView, TitleViewSet
+
 
 # Создаём роутер - объект, который автоматически сгенерирует
 # стандартные маршруты CRUD (Create, Read, Update, Delete)
