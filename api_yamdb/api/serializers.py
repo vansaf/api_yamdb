@@ -14,7 +14,6 @@ class SignUpSerializer(serializers.ModelSerializer):
         model = User
         fields = ('email', 'username')
 
-
 class CategorySerializer(serializers.ModelSerializer):
     """
     Сериализатор для модели Category.
@@ -74,6 +73,18 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = '__all__'
+
+
+
+class SignUpSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField()
+    username = serializers.CharField()
+
+    class Meta:
+        model = User
+        fields = ('email', 'username')
+
+
 
 #class GetTokenSerializer(serializers.ModelSerializer):
 #    username = serializers.Charfield()
