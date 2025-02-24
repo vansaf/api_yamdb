@@ -4,18 +4,21 @@
 к моделям Category, Genre и Title.
 """
 
-# DRF-класс для создания набора представлений
-from rest_framework import generics, viewsets, serializers, filters, permissions, status
+from rest_framework import (generics,
+                            viewsets,
+                            serializers,
+                            filters,
+                            permissions,
+                            status)
 from rest_framework.response import Response
-# Импортируем наши модели
+
 from reviews.models import Category, Genre, Title, Review, Comment, User
-# Импорт сериализаторов
+
 from .serializers import SignUpSerializer, CategorySerializer, GenreSerializer, TitleSerializer, ReviewSerializer, CommentSerializer
 from .permissions import CustomReviewAndCommentPermission
 from .pagination import CustomPagination
 from .utils import generate_confirmation_code, send_confirmation_code
 from django_filters.rest_framework import DjangoFilterBackend
-
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -93,9 +96,26 @@ class SignUpView(generics.CreateAPIView):
     serializer_class = SignUpSerializer
     permission_classes = (permissions.AllowAny, )
 
-    def perform_create(self, serializer):
-        user = serializer.save()
+    def post(self, request):
+        serializer = SignUpSerializer(data=request.data)
+        # user = serializer.save()
+        serializer.is_valid()
+        serializer.save()
+        data = serializer.data
         confirmation_code = generate_confirmation_code()
         self.request.session['confirmation_code'] = confirmation_code
-        send_confirmation_code(user.email, confirmation_code)
-        return Response(status=status.HTTP_201_CREATED)
+        send_confirmation_code(data['email'], confirmation_code)
+        return Response(
+            {
+                'email': data['email'],
+                'username': data['username']
+            },
+            status=status.HTTP_200_OK
+        )
+
+   # def perform_create(self, serializer):
+   #     user = serializer.save()
+   #     confirmation_code = generate_confirmation_code()
+   #     self.request.session['confirmation_code'] = confirmation_code
+   #     send_confirmation_code(user.email, confirmation_code)
+   #     return Response(status=status.HTTP_201_CREATED)

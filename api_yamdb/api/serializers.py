@@ -10,7 +10,6 @@ from rest_framework import serializers
 from reviews.models import Category, Genre, Title, Review, Comment, User
 
 
-
 class CategorySerializer(serializers.ModelSerializer):
     """
     Сериализатор для модели Category.
@@ -73,6 +72,9 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class SignUpSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField()
+    username = serializers.CharField()
+
     class Meta:
         model = User
         fields = ('email', 'username')
