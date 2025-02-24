@@ -21,7 +21,8 @@ from rest_framework import (
 )
 
 from .pagination import CustomPagination
-from .permissions import CustomReviewAndCommentPermission
+from .permissions import (CustomReviewAndCommentPermission,
+                          IsAdminIsModeratorIsAuthorOrReadOnly)
 from .serializers import (
     CategorySerializer,
     CommentSerializer,
@@ -109,11 +110,11 @@ class CommentsViewSet(viewsets.ModelViewSet):
         return Comment.objects.filter(review__id=review_id)
 
 
-
 class SignUpView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = SignUpSerializer
-    permission_classes = (permissions.AllowAny, )
+    permission_classes = (IsAdminIsModeratorIsAuthorOrReadOnly,
+                          permissions.AllowAny, )
 
     def post(self, request):
         serializer = SignUpSerializer(data=request.data)
