@@ -1,12 +1,8 @@
-"""
-В этом файле описываются сериализаторы,
-которые превращают объекты моделей в формат JSON (и обратно),
-чтобы их можно было отправлять/получать по API.
-"""
-
 from rest_framework import serializers
 
 from reviews.models import Category, Comment, Genre, Review, Title, User
+from django.core.exceptions import ValidationError
+import re
 
 
 class SignUpSerializer(serializers.ModelSerializer):
@@ -75,17 +71,41 @@ class CommentSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-
 class SignUpSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField()
-    username = serializers.CharField()
 
     class Meta:
         model = User
         fields = ('email', 'username')
 
+    def validate_username(self, value):
+        if value == 'me':
+            raise serializers.ValidationError()
+        if len(value) > 150:
+            raise serializers.ValidationError()
+        if not re.match(r'^[\w.@+-]+$', value):
+            raise serializers.ValidationError()
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError()
+        return value
+
+    def validate_email(self, value):
+        if len(value) > 254:
+            raise serializers.ValidationError()
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError()
+        return value
 
 
-#class GetTokenSerializer(serializers.ModelSerializer):
-#    username = serializers.Charfield()
-#    confirmation_code = serializers.Charfield()
+class TokenSerializer(serializers.ModelSerializer):
+    confirmation_code = serializers.CharField(max_length=6)
+
+    class Meta:
+        model = User
+        fields = ('username', 'confirmation_code')
+
+    def validate(self, attrs):
+        confirmation_code = attrs.get('confirmation_code')
+        session_confirmation_code = self.context['request'].session.get('confirmation_code')
+        if confirmation_code != session_confirmation_code:
+            raise serializers.ValidationError()
+        return attrs
