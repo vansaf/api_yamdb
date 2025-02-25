@@ -106,6 +106,9 @@ class SignUpSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError()
         return value
 
+    
+
+
 
 class TokenSerializer(serializers.ModelSerializer):
     confirmation_code = serializers.CharField(max_length=6)
@@ -126,4 +129,19 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('__all__')
+
+        fields = [
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'bio',
+            'role'
+        ]
+
+    def validate_username(self, value):
+
+        if not re.match(r'^[\w.@+-]+$', value):
+            raise serializers.ValidationError()
+        return value
+
