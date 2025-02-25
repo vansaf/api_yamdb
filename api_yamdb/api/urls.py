@@ -36,11 +36,18 @@ router_v1.register('genres', GenreViewSet, basename='genres')
 router_v1.register('titles', TitleViewSet, basename='titles')
 
 # Регистрируем ViewSet для произведений под адресом "reviews".
-router_v1.register('reviews', ReviewsViewSet, basename='reviews')
+router_v1.register(
+    r'/titles/(?P<title_id>\d+)/reviews/',
+    ReviewsViewSet,
+    basename='reviews'
+)
 
 # Регистрируем ViewSet для произведений под адресом "comments".
-router_v1.register('comments', CommentsViewSet)
-
+router_v1.register(
+    r'titles/(?P<title_id>\d+)/reviews/(?P<reviews_id>\d+)/comments',
+    CommentsViewSet,
+    basename='comments'
+)
 
 
 # Подключаем все маршруты роутера под префиксом /v1/.
@@ -50,4 +57,5 @@ urlpatterns = [
     path('v1/', include(router_v1.urls)),
     path('v1/auth/signup/', SignUpView.as_view(), name='signup'),
     path('v1/auth/token/', TokenView.as_view(), name='token'),
+    path('')
 ]

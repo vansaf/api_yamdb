@@ -66,7 +66,9 @@ class TokenView(views.APIView):
     def post(self, request):
         serializer = TokenSerializer(data=request.data)
         if serializer.is_valid():
-            user = User.objects.get(username=serializer.validated_data['username'])
+            user = User.objects.get(
+                username=serializer.validated_data['username']
+            )
             token = AccessToken.for_user(user)
             return Response({'token': token}, status=status.HTTP_200_OK)
         else:
