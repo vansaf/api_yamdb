@@ -156,7 +156,6 @@ class CommentsViewSet(viewsets.ModelViewSet):
         return Comment.objects.filter(review__id=review_id)
 
 
-
 class SignUpView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = SignUpSerializer
@@ -165,7 +164,14 @@ class SignUpView(generics.CreateAPIView):
     def post(self, request):
         serializer = SignUpSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.save()
+            email = serializer.validated_data['email']
+            username = serializer.validated_data['username']
+            
+            try:
+                user = User.objects.get(email=email, username=username)
+            except User.DoesNotExist:
+
+                user = serializer.save()
             confirmation_code = generate_confirmation_code()
             request.session['confirmation_code'] = confirmation_code
             send_confirmation_code(user.email, confirmation_code)
@@ -197,11 +203,11 @@ class TokenView(views.APIView):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = (IsAdmin,)
+    permission_classes = (IsAuthenticated, IsAdmin,)
     lookup_field = 'username'
+    http_method_names = ['get', 'post', 'patch', 'delete']
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
-    pagination_class = PageNumberPagination 
 
     @action(detail=False,
             methods=['get', 'patch'],
@@ -220,4 +226,3 @@ class UserViewSet(viewsets.ModelViewSet):
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data)
-
