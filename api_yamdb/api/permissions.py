@@ -23,7 +23,7 @@ class IsAdminOrReadOnly(BasePermission):
     - действия с объектом запрошены только на чтение для
     авторизованного пользователя
     """
-    def has_object_permission(self, request, view):
+    def has_object_permission(self, request, view, obj):
         return (request.method in SAFE_METHODS
                 and request.user.is_authenticated
                 or request.user.is_admin)
@@ -31,5 +31,5 @@ class IsAdminOrReadOnly(BasePermission):
 
 class IsAdmin(BasePermission):
     """Класс проверки является ли пользователь администратором."""
-    def has_object_permission(self, request, view):
+    def has_object_permission(self, request, view, obj):
         return request.user.is_admin

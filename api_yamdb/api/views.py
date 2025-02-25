@@ -5,11 +5,11 @@
 """
 
 from rest_framework.response import Response
-
+from rest_framework.pagination import PageNumberPagination
 from reviews.models import Category, Genre, Title, Review, Comment, User
 from rest_framework_simplejwt.tokens import AccessToken
-
-
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import (
     filters,
@@ -32,7 +32,8 @@ from .serializers import (
     ReviewSerializer,
     SignUpSerializer,
     TokenSerializer,
-    TitleSerializer
+    TitleSerializer,
+    UserSerializer
 )
 from .utils import generate_confirmation_code, send_confirmation_code
 
@@ -151,3 +152,31 @@ class TokenView(views.APIView):
         else:
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = (IsAdmin,)
+    lookup_field = 'username'
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('username',)
+    pagination_class = PageNumberPagination 
+
+    @action(detail=False,
+            methods=['get', 'patch'],
+            permission_classes=[IsAuthenticated])
+    def me(self, request):
+        if request.method == 'GET':
+            serializer = self.get_serializer(instance=request.user)
+            return Response(serializer.data)
+
+        if request.method == 'PATCH':
+            serializer = self.get_serializer(
+                data=request.data,
+                instance=request.user,
+                partial=True
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)

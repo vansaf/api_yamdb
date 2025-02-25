@@ -109,3 +109,10 @@ class TokenSerializer(serializers.ModelSerializer):
         if confirmation_code != session_confirmation_code:
             raise serializers.ValidationError()
         return attrs
+
+
+class UserSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = User
+        fields = ('__all__')
