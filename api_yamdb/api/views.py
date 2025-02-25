@@ -37,6 +37,45 @@ from .serializers import (
 from .utils import generate_confirmation_code, send_confirmation_code
 
 
+class SignUpView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = SignUpSerializer
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request):
+        serializer = SignUpSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            confirmation_code = generate_confirmation_code()
+            request.session['confirmation_code'] = confirmation_code
+            send_confirmation_code(user.email, confirmation_code)
+            return Response({
+                'email': serializer.validated_data['email'],
+                'username': serializer.validated_data['username']
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+
+
+class TokenView(views.APIView):
+    queryset = User.objects.all()
+    serializer_class = TokenSerializer
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request):
+        serializer = TokenSerializer(data=request.data)
+        if serializer.is_valid():
+            user = User.objects.get(
+                username=serializer.validated_data['username']
+            )
+            token = AccessToken.for_user(user)
+            return Response({'token': token}, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+
+
 class CategoryViewSet(viewsets.ModelViewSet):
     """
     ViewSet для работы с категориями (Category).
@@ -114,40 +153,3 @@ class CommentsViewSet(viewsets.ModelViewSet):
         """Фильтрует коментарии по ID произведения."""
         review_id = self.kwargs.get('review_id')
         return Comment.objects.filter(review__id=review_id)
-
-
-class SignUpView(generics.CreateAPIView):
-    queryset = User.objects.all()
-    serializer_class = SignUpSerializer
-    permission_classes = (permissions.AllowAny,)
-
-    def post(self, request):
-        serializer = SignUpSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            confirmation_code = generate_confirmation_code()
-            request.session['confirmation_code'] = confirmation_code
-            send_confirmation_code(user.email, confirmation_code)
-            return Response({
-                'email': serializer.validated_data['email'],
-                'username': serializer.validated_data['username']
-            }, status=status.HTTP_200_OK)
-        else:
-            return Response(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
-
-
-class TokenView(views.APIView):
-    queryset = User.objects.all()
-    serializer_class = TokenSerializer
-    permission_classes = (permissions.AllowAny,)
-
-    def post(self, request):
-        serializer = TokenSerializer(data=request.data)
-        if serializer.is_valid():
-            user = User.objects.get(username=serializer.validated_data['username'])
-            token = AccessToken.for_user(user)
-            return Response({'token': token}, status=status.HTTP_200_OK)
-        else:
-            return Response(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)

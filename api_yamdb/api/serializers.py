@@ -6,9 +6,44 @@ import re
 
 
 class SignUpSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = User
         fields = ('email', 'username')
+
+    def validate_username(self, value):
+        if value == 'me':
+            raise serializers.ValidationError()
+        if len(value) > 150:
+            raise serializers.ValidationError()
+        if not re.match(r'^[\w.@+-]+$', value):
+            raise serializers.ValidationError()
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError()
+        return value
+
+    def validate_email(self, value):
+        if len(value) > 254:
+            raise serializers.ValidationError()
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError()
+        return value
+
+
+class TokenSerializer(serializers.ModelSerializer):
+    confirmation_code = serializers.CharField(max_length=6)
+
+    class Meta:
+        model = User
+        fields = ('username', 'confirmation_code')
+
+    def validate(self, attrs):
+        confirmation_code = attrs.get('confirmation_code')
+        session_confirmation_code = self.context['request'].session.get('confirmation_code')
+        if confirmation_code != session_confirmation_code:
+            raise serializers.ValidationError()
+        return attrs
+
 
 class CategorySerializer(serializers.ModelSerializer):
     """
@@ -70,42 +105,7 @@ class CommentSerializer(serializers.ModelSerializer):
         model = Comment
         fields = '__all__'
 
+#class GetTokenSerializer(serializers.ModelSerializer):
+#    username = serializers.Charfield()
+#    confirmation_code = serializers.Charfield()
 
-class SignUpSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = User
-        fields = ('email', 'username')
-
-    def validate_username(self, value):
-        if value == 'me':
-            raise serializers.ValidationError()
-        if len(value) > 150:
-            raise serializers.ValidationError()
-        if not re.match(r'^[\w.@+-]+$', value):
-            raise serializers.ValidationError()
-        if User.objects.filter(username=value).exists():
-            raise serializers.ValidationError()
-        return value
-
-    def validate_email(self, value):
-        if len(value) > 254:
-            raise serializers.ValidationError()
-        if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError()
-        return value
-
-
-class TokenSerializer(serializers.ModelSerializer):
-    confirmation_code = serializers.CharField(max_length=6)
-
-    class Meta:
-        model = User
-        fields = ('username', 'confirmation_code')
-
-    def validate(self, attrs):
-        confirmation_code = attrs.get('confirmation_code')
-        session_confirmation_code = self.context['request'].session.get('confirmation_code')
-        if confirmation_code != session_confirmation_code:
-            raise serializers.ValidationError()
-        return attrs
