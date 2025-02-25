@@ -14,6 +14,7 @@ from .views import (
     GenreViewSet,
     TitleViewSet,
     SignUpView,
+    TokenView,
     ReviewsViewSet,
     CommentsViewSet
 )
@@ -39,11 +40,14 @@ router_v1.register('reviews', ReviewsViewSet, basename='reviews')
 
 # Регистрируем ViewSet для произведений под адресом "comments".
 router_v1.register('comments', CommentsViewSet)
+
+
+
 # Подключаем все маршруты роутера под префиксом /v1/.
 # То есть, всё, что начинается на "/v1/..." в адресе,
 # будет обрабатываться соответствующими ViewSet'ами.
 urlpatterns = [
     path('v1/', include(router_v1.urls)),
     path('v1/auth/signup/', SignUpView.as_view(), name='signup'),
-    #path('v1/auth/token/', GetTokenView.as_view(), name='token'),
+    path('v1/auth/token/', TokenView.as_view(), name='token'),
 ]
