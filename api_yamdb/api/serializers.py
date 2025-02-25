@@ -55,6 +55,7 @@ class TitleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Title
+        fields = '__all__'
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -126,4 +127,3 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('__all__')
-
