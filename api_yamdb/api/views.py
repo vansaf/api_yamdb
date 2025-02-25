@@ -5,11 +5,11 @@
 """
 
 from rest_framework.response import Response
-
+from rest_framework.pagination import PageNumberPagination
 from reviews.models import Category, Genre, Title, Review, Comment, User
 from rest_framework_simplejwt.tokens import AccessToken
-
-
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import (
     filters,
@@ -32,7 +32,8 @@ from .serializers import (
     ReviewSerializer,
     SignUpSerializer,
     TokenSerializer,
-    TitleSerializer
+    TitleSerializer,
+    UserSerializer
 )
 from .utils import generate_confirmation_code, send_confirmation_code
 
@@ -153,3 +154,70 @@ class CommentsViewSet(viewsets.ModelViewSet):
         """Фильтрует коментарии по ID произведения."""
         review_id = self.kwargs.get('review_id')
         return Comment.objects.filter(review__id=review_id)
+
+
+
+class SignUpView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = SignUpSerializer
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request):
+        serializer = SignUpSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            confirmation_code = generate_confirmation_code()
+            request.session['confirmation_code'] = confirmation_code
+            send_confirmation_code(user.email, confirmation_code)
+            return Response({
+                'email': serializer.validated_data['email'],
+                'username': serializer.validated_data['username']
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+
+
+class TokenView(views.APIView):
+    queryset = User.objects.all()
+    serializer_class = TokenSerializer
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request):
+        serializer = TokenSerializer(data=request.data)
+        if serializer.is_valid():
+            user = User.objects.get(username=serializer.validated_data['username'])
+            token = AccessToken.for_user(user)
+            return Response({'token': token}, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = (IsAdmin,)
+    lookup_field = 'username'
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('username',)
+    pagination_class = PageNumberPagination 
+
+    @action(detail=False,
+            methods=['get', 'patch'],
+            permission_classes=[IsAuthenticated])
+    def me(self, request):
+        if request.method == 'GET':
+            serializer = self.get_serializer(instance=request.user)
+            return Response(serializer.data)
+
+        if request.method == 'PATCH':
+            serializer = self.get_serializer(
+                data=request.data,
+                instance=request.user,
+                partial=True
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
+
