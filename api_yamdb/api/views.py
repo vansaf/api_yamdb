@@ -21,8 +21,9 @@ from rest_framework import (
 )
 
 from .pagination import CustomPagination
-from .permissions import (CustomReviewAndCommentPermission,
-                          IsAdminIsModeratorIsAuthorOrReadOnly)
+from .permissions import (IsAdminIsModeratorIsAuthorOrReadOnly,
+                          IsAdminOrReadOnly,
+                          IsAdmin)
 from .serializers import (
     CategorySerializer,
     CommentSerializer,
@@ -43,6 +44,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
     """
     queryset = Category.objects.all()  # Указываем, какие данные обрабатываем
     serializer_class = CategorySerializer  # Какой сериализатор использовать
+    permission_classes = (IsAdminOrReadOnly,)
 
 
 class GenreViewSet(viewsets.ModelViewSet):
@@ -52,6 +54,7 @@ class GenreViewSet(viewsets.ModelViewSet):
     """
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
+    permission_classes = (IsAdminOrReadOnly,)
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -60,6 +63,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     """
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
+    permission_classes = (IsAdminOrReadOnly,)
 
 
 class ReviewsViewSet(viewsets.ModelViewSet):
@@ -68,8 +72,8 @@ class ReviewsViewSet(viewsets.ModelViewSet):
     """
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
-    permission_classes = CustomReviewAndCommentPermission
-    pagination_class = CustomPagination
+    permission_classes = (IsAdminIsModeratorIsAuthorOrReadOnly,)
+    pagination_class = (CustomPagination, )
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     filterset_fields = ('pub_date', 'score')
     search_fields = ('author')
@@ -98,7 +102,7 @@ class CommentsViewSet(viewsets.ModelViewSet):
     """
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
-    permission_classes = CustomReviewAndCommentPermission
+    permission_classes = (IsAdminIsModeratorIsAuthorOrReadOnly,)
     pagination_class = CustomPagination
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     filterset_fields = ('pub_date')
@@ -120,7 +124,7 @@ class SignUpView(generics.CreateAPIView):
         serializer = SignUpSerializer(data=request.data)
         # user = serializer.save()
         serializer.is_valid()
-        serializer.save()
+        # serializer.save()
         data = serializer.data
         confirmation_code = generate_confirmation_code()
         self.request.session['confirmation_code'] = confirmation_code
