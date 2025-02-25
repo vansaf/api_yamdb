@@ -5,7 +5,12 @@
 """
 
 from rest_framework.response import Response
+
+from django.shortcuts import get_object_or_404
+
+
 from rest_framework.pagination import PageNumberPagination
+
 from reviews.models import Category, Genre, Title, Review, Comment, User
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.decorators import action
@@ -115,27 +120,51 @@ class ReviewsViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
     permission_classes = (IsAdminIsModeratorIsAuthorOrReadOnly,)
-    pagination_class = (CustomPagination, )
+    pagination_class = CustomPagination
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     filterset_fields = ('pub_date', 'score')
-    search_fields = ('author')
-
-    def perform_create(self, serializer):
-        """Создание отзыва с ограничением: один пользователь — один отзыв"""
-        review_id = self.kwargs.get('review_id')
-        user = self.request.user
-
-        if Review.objects.filter(author=user, review_id=review_id).exists():
-            raise serializers.ValidationError(
-                'Вы уже оставили отзыв на это произведение.'
-            )
-
-        serializer.save(author=user, review_id=review_id)
+    search_fields = ('author', )
 
     def get_queryset(self):
         """Фильтрует отзывы по ID произведения."""
         title_id = self.kwargs.get('title_id')
+        get_object_or_404(Title, id=title_id)
         return Review.objects.filter(title_id=title_id)
+
+    def perform_create(self, serializer):
+        """Создание отзыва с ограничением: один пользователь — один отзыв"""
+        title_id = self.kwargs.get('title_id')
+        user = self.request.user
+
+        get_object_or_404(Title, id=title_id)
+
+        review, created = Review.objects.get_or_create(
+            title_id=title_id,
+            author=user,
+            defaults=serializer.validated_data
+        )
+
+        if not created:
+            raise serializers.ValidationError(
+                'Вы уже оставили отзыв на это произведение.'
+            )
+
+        serializer.instance = review
+
+    def partial_update(self, request, *args, **kwargs):
+        """Частичное обновление отзыва (PATCH)."""
+        title_id = self.kwargs.get('title_id')
+        get_object_or_404(Title, id=title_id)
+
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        """Удаление отзыва по ID."""
+        title_id = self.kwargs.get('title_id')
+        get_object_or_404(Title, id=title_id)
+
+        get_object_or_404(Review, id=kwargs.get('review_id'))
+        return super().destroy(request, *args, **kwargs)
 
 
 class CommentsViewSet(viewsets.ModelViewSet):
@@ -148,13 +177,48 @@ class CommentsViewSet(viewsets.ModelViewSet):
     pagination_class = CustomPagination
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     filterset_fields = ('pub_date')
-    search_fields = ('author')
+    search_fields = ('author',)
 
     def get_queryset(self):
-        """Фильтрует коментарии по ID произведения."""
-        review_id = self.kwargs.get('review_id')
-        return Comment.objects.filter(review__id=review_id)
+        """Фильтрует отзывы по ID произведения."""
+        comment_id = self.kwargs.get('comment_id')
+        get_object_or_404(Comment, id=comment_id)
+        return Comment.objects.filter(comment_id=comment_id)
 
+    def perform_create(self, serializer):
+        """Создание отзыва с ограничением: один пользователь — один отзыв"""
+        comment_id = self.kwargs.get('comment_id')
+        user = self.request.user
+
+        get_object_or_404(Comment, id=comment_id)
+
+        comment, created = Comment.objects.get_or_create(
+            comment_id=comment_id,
+            author=user,
+            defaults=serializer.validated_data
+        )
+
+        if not created:
+            raise serializers.ValidationError(
+                'Вы уже оставили отзыв на это произведение.'
+            )
+
+        serializer.instance = comment
+
+    def partial_update(self, request, *args, **kwargs):
+        """Частичное обновление отзыва (PATCH)."""
+        comment_id = self.kwargs.get('comment_id')
+        get_object_or_404(Comment, id=comment_id)
+
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        """Удаление отзыва по ID."""
+        comment_id = self.kwargs.get('comment_id')
+        get_object_or_404(Comment, id=comment_id)
+
+        get_object_or_404(Comment, id=kwargs.get('comment_id'))
+        return super().destroy(request, *args, **kwargs)
 
 
 class SignUpView(generics.CreateAPIView):
@@ -220,4 +284,3 @@ class UserViewSet(viewsets.ModelViewSet):
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data)
-
