@@ -55,6 +55,7 @@ class TitleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Title
+        fields = '__all__'
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -128,6 +129,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
+
         fields = [
             'username',
             'email',
@@ -142,3 +144,4 @@ class UserSerializer(serializers.ModelSerializer):
         if not re.match(r'^[\w.@+-]+$', value):
             raise serializers.ValidationError()
         return value
+
