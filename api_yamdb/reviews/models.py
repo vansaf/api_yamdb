@@ -78,7 +78,6 @@ class Category(models.Model):
 class Genre(models.Model):
     """
     Модель для жанров (например, 'Рок', 'Артхаус', 'Сказка').
-
     Поля:
     name - название жанра
     slug - уникальный идентификатор
