@@ -1,4 +1,5 @@
 import re
+from django.db.models import Avg
 
 from rest_framework import serializers, status
 
@@ -95,18 +96,23 @@ class GenreSerializer(serializers.ModelSerializer):
 
 
 class TitleSerializer(serializers.ModelSerializer):
-    """
-    Сериализатор для модели Title.
-    Здесь можно настроить вложенные сериализаторы,
-    если нужно показывать detail-информацию о категории и жанрах.
-    """
-    # Если хотим вложенные поля, делаем так (пример):
-    # category = CategorySerializer(read_only=True)
-    # genre = GenreSerializer(many=True, read_only=True)
+    genre = serializers.SlugRelatedField(
+        slug_field='slug',
+        queryset=Genre.objects.all(),
+        many=True
+    )
+    category = serializers.SlugRelatedField(
+        slug_field='slug',
+        queryset=Category.objects.all()
+    )
 
     class Meta:
         model = Title
-        fields = '__all__'
+        fields = ('id', 'name', 'year', 'description', 'category', 'genre', 'rating')
+
+    def get_rating(self, obj):
+        """Вычисляет средний рейтинг для произведения."""
+        return obj.reviews.aggregate(Avg('score'))['score__avg']
 
 
 class ReviewSerializer(serializers.ModelSerializer):
