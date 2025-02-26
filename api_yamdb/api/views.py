@@ -1,6 +1,8 @@
 from django.shortcuts import get_object_or_404
 
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from django.db.models import Avg
 
 from rest_framework import (
     filters,
@@ -22,6 +24,7 @@ from .pagination import CustomPagination
 from .permissions import (IsAdminIsModeratorIsAuthorOrReadOnly,
                           IsAdminOrReadOnly,
                           IsAdmin)
+from .filters import TitleFilter
 from .serializers import (
     CategorySerializer,
     CommentSerializer,
@@ -29,7 +32,8 @@ from .serializers import (
     ReviewSerializer,
     SignUpSerializer,
     TokenSerializer,
-    TitleSerializer,
+    TitleReadSerializer,
+    TitleWriteSerializer,
     UserSerializer
 )
 from .utils import generate_confirmation_code, send_confirmation_code
@@ -79,7 +83,9 @@ class TokenView(views.APIView):
             token = AccessToken.for_user(user)
             return Response({'token': str(token)}, status=status.HTTP_200_OK)
         errors = serializer.errors
-        if 'username' in errors and errors['username'][0].code == 'user not found':
+        if 'username' in errors and errors(
+            ['username'][0] == 'Пользователь не найден'
+        ):
             return Response(errors, status=status.HTTP_404_NOT_FOUND)
         return Response(errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -118,7 +124,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
-    http_method_names = ['get', 'post', 'delete']  # Отключаем retrieve (GET по slug)
+    http_method_names = ['get', 'post', 'delete']
 
     def retrieve(self, request, *args, **kwargs):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -131,123 +137,63 @@ class GenreViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
-    http_method_names = ['get', 'post', 'delete']  # Отключаем retrieve (GET по slug)
+    http_method_names = ['get', 'post', 'delete']
 
     def retrieve(self, request, *args, **kwargs):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
 
 class TitleViewSet(viewsets.ModelViewSet):
     """
     ViewSet для работы с произведениями (Title).
     """
-    queryset = Title.objects.all()
-    serializer_class = TitleSerializer
+    queryset = Title.objects.annotate(
+        rating=Avg('reviews__score')
+    ).all()
     permission_classes = (IsAdminOrReadOnly,)
+    filter_backends = (DjangoFilterBackend, )
+    filterset_class = TitleFilter
+    http_method_names = ['get', 'post', 'patch', 'delete']
+
+    def get_serializer_class(self):
+        if self.action in ('list', 'retrieve'):
+            return TitleReadSerializer
+        return TitleWriteSerializer
 
 
 class ReviewsViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet для работы с отзывами (Reviews).
-    """
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
-    permission_classes = (IsAdminIsModeratorIsAuthorOrReadOnly,)
-    pagination_class = CustomPagination
-    filter_backends = (DjangoFilterBackend, filters.SearchFilter)
-    filterset_fields = ('pub_date', 'score')
-    search_fields = ('author', )
+    permission_classes = (IsAuthenticatedOrReadOnly, IsAdminIsModeratorIsAuthorOrReadOnly)
+    http_method_names = ['get', 'post', 'patch', 'delete']  # Отключаем PUT
 
     def get_queryset(self):
-        """Фильтрует отзывы по ID произведения."""
         title_id = self.kwargs.get('title_id')
-        get_object_or_404(Title, id=title_id)
         return Review.objects.filter(title_id=title_id)
 
     def perform_create(self, serializer):
-        """Создание отзыва с ограничением: один пользователь — один отзыв"""
         title_id = self.kwargs.get('title_id')
-        user = self.request.user
-
-        get_object_or_404(Title, id=title_id)
-
-        review, created = Review.objects.get_or_create(
-            title_id=title_id,
-            author=user,
-            defaults=serializer.validated_data
-        )
-
-        if not created:
-            raise serializers.ValidationError(
-                'Вы уже оставили отзыв на это произведение.'
-            )
-
-        serializer.instance = review
-
-    def partial_update(self, request, *args, **kwargs):
-        """Частичное обновление отзыва (PATCH)."""
-        title_id = self.kwargs.get('title_id')
-        get_object_or_404(Title, id=title_id)
-
-        return super().partial_update(request, *args, **kwargs)
+        serializer.save(author=self.request.user, title_id=title_id)
 
     def destroy(self, request, *args, **kwargs):
-        """Удаление отзыва по ID."""
-        title_id = self.kwargs.get('title_id')
-        get_object_or_404(Title, id=title_id)
-
-        get_object_or_404(Review, id=kwargs.get('review_id'))
-        return super().destroy(request, *args, **kwargs)
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class CommentsViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet для работы с коментариями (Comments).
-    """
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
-    permission_classes = (IsAdminIsModeratorIsAuthorOrReadOnly,)
-    pagination_class = CustomPagination
-    filter_backends = (DjangoFilterBackend, filters.SearchFilter)
-    filterset_fields = ('pub_date')
-    search_fields = ('author',)
+    permission_classes = (
+        IsAuthenticatedOrReadOnly,
+        IsAdminIsModeratorIsAuthorOrReadOnly
+    )
 
     def get_queryset(self):
-        """Фильтрует отзывы по ID произведения."""
-        comment_id = self.kwargs.get('comment_id')
-        get_object_or_404(Comment, id=comment_id)
-        return Comment.objects.filter(comment_id=comment_id)
+        title_id = self.kwargs.get('title_id')
+        review_id = self.kwargs.get('review_id')
+        return Comment.objects.filter(review__title_id=title_id, review_id=review_id)
 
     def perform_create(self, serializer):
-        """Создание отзыва с ограничением: один пользователь — один отзыв"""
-        comment_id = self.kwargs.get('comment_id')
-        user = self.request.user
-
-        get_object_or_404(Comment, id=comment_id)
-
-        comment, created = Comment.objects.get_or_create(
-            comment_id=comment_id,
-            author=user,
-            defaults=serializer.validated_data
-        )
-
-        if not created:
-            raise serializers.ValidationError(
-                'Вы уже оставили отзыв на это произведение.'
-            )
-
-        serializer.instance = comment
-
-    def partial_update(self, request, *args, **kwargs):
-        """Частичное обновление отзыва (PATCH)."""
-        comment_id = self.kwargs.get('comment_id')
-        get_object_or_404(Comment, id=comment_id)
-
-        return super().partial_update(request, *args, **kwargs)
-
-    def destroy(self, request, *args, **kwargs):
-        """Удаление отзыва по ID."""
-        comment_id = self.kwargs.get('comment_id')
-        get_object_or_404(Comment, id=comment_id)
-
-        get_object_or_404(Comment, id=kwargs.get('comment_id'))
-        return super().destroy(request, *args, **kwargs)
+        review_id = self.kwargs.get('review_id')
+        serializer.save(author=self.request.user, review_id=review_id)

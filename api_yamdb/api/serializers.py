@@ -1,6 +1,6 @@
 import re
-from django.db.models import Avg
-
+from django.core.exceptions import ValidationError
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
 from reviews.models import Category, Comment, Genre, Review, Title, User
@@ -74,16 +74,9 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    """
-    Сериализатор для модели Category.
-    ModelSerializer автоматически генерирует поля
-    на основе полей модели Category.
-    """
     class Meta:
-        # С какой моделью работаем:
         model = Category
-        # Какие поля будем сериализовать:
-        exclude = ('id',)
+        fields = ['name', 'slug']
 
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -96,40 +89,68 @@ class GenreSerializer(serializers.ModelSerializer):
         exclude = ('id',)
 
 
-class TitleSerializer(serializers.ModelSerializer):
-    genre = serializers.SlugRelatedField(
-        slug_field='slug',
-        queryset=Genre.objects.all(),
+class TitleReadSerializer(serializers.ModelSerializer):
+    category = CategorySerializer(read_only=True)
+    genre = GenreSerializer(
+        read_only=True,
         many=True
     )
+    rating = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        fields = '__all__'
+        model = Title
+
+
+class TitleWriteSerializer(serializers.ModelSerializer):
     category = serializers.SlugRelatedField(
+        queryset=Category.objects.all(),
+        slug_field='slug'
+    )
+    genre = serializers.SlugRelatedField(
+        queryset=Genre.objects.all(),
         slug_field='slug',
-        queryset=Category.objects.all()
+        many=True
     )
 
     class Meta:
+        fields = '__all__'
         model = Title
-        fields = ('id', 'name', 'year', 'description', 'category', 'genre', 'rating')
-
-    def get_rating(self, obj):
-        """Вычисляет средний рейтинг для произведения."""
-        return obj.reviews.aggregate(Avg('score'))['score__avg']
 
 
 class ReviewSerializer(serializers.ModelSerializer):
-    """Сериализатор модели отзывов (Reviews)."""
+    title = serializers.SlugRelatedField(
+        slug_field='name',
+        read_only=True
+    )
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True
     )
 
+    def validate_score(self, value):
+        if 0 > value > 10:
+            raise serializers.ValidationError('Оценка по 10-бальной шкале!')
+        return value
+
+    def validate(self, data):
+        request = self.context['request']
+        author = request.user
+        title_id = self.context.get('view').kwargs.get('title_id')
+        title = get_object_or_404(Title, pk=title_id)
+        if (
+            request.method == 'POST'
+            and Review.objects.filter(title=title, author=author).exists()
+        ):
+            raise ValidationError('Может существовать только один отзыв!')
+        return data
+
     class Meta:
-        model = Review
         fields = '__all__'
+        model = Review
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    """Сериализатор модели комментариев (Comments)."""
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True
@@ -137,4 +158,4 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = '__all__'
+        fields = ('id', 'text', 'author', 'pub_date')

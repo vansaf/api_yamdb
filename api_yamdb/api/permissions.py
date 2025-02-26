@@ -18,17 +18,12 @@ class IsAdminIsModeratorIsAuthorOrReadOnly(BasePermission):
 
 
 class IsAdminOrReadOnly(BasePermission):
-    """Класс проверки выполняется ли одно из двух условий:
-    - является ли пользователь администратором
-    - действия с объектом запрошены только на чтение для
-    авторизованного пользователя
-    """
-
     def has_permission(self, request, view):
-        return (request.method in SAFE_METHODS
-                or (request.user.is_authenticated
-                    and request.user.is_admin)
-                )
+        if request.method in SAFE_METHODS:
+            return True
+        if request.user.is_authenticated:
+            return request.user.is_admin
+        return False
 
 
 class IsAdmin(BasePermission):
