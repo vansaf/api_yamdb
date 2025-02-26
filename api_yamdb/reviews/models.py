@@ -96,18 +96,14 @@ class Title(models.Model):
     year = models.PositiveIntegerField()
     description = models.TextField(blank=True, null=True)
     category = models.ForeignKey(
-        Category,
-        # Если удалить категорию, поле category станет null
-        on_delete=models.SET_NULL,
-        null=True,
-        # Позволяет обратный доступ: category.titles.all()
-        related_name='titles'
+        Category, on_delete=models.SET_NULL, null=True, related_name='titles'
     )
     genre = models.ManyToManyField(
         Genre,
-        # Обратный доступ: genre.titles.all()
-        related_name='titles'
+        through='GenreTitle',
+        verbose_name='Жанр'
     )
+    rating = models.FloatField(default=0, verbose_name='Рейтинг')  # Добавлено
 
     def __str__(self):
         return self.name
@@ -118,19 +114,14 @@ class GenreTitle(models.Model):
     Промежуточная модель для связи Title и Genre.
     Каждая пара (title, genre) должна быть уникальной.
     """
-    title = models.ForeignKey(
-        Title,
-        on_delete=models.CASCADE,
-        related_name='genre_titles'
-    )
-    genre = models.ForeignKey(
-        Genre,
-        on_delete=models.CASCADE,
-        related_name='genre_titles'
-    )
+    title = models.ForeignKey(Title, on_delete=models.CASCADE)
+    genre = models.ForeignKey(Genre, on_delete=models.CASCADE)
 
     class Meta:
-        unique_together = ('title', 'genre')
+        constraints = [
+            models.UniqueConstraint(fields=['title', 'genre'],
+                                    name='unique_title_genre')
+        ]
         verbose_name = 'Жанр Названия'
         verbose_name_plural = 'Жанры Названий'
 
@@ -140,32 +131,21 @@ class GenreTitle(models.Model):
 
 class Review(models.Model):
     """Модель для работы с отзывами."""
-    title = models.ForeignKey(
-        Title, on_delete=models.CASCADE,
-        related_name='reviews'
-    )
+    title = models.ForeignKey(Title, on_delete=models.CASCADE,
+                              related_name='reviews')
     text = models.TextField()
-    author = models.ForeignKey(
-        User,
-        related_name='reviews',
-        on_delete=models.CASCADE
-    )
+    author = models.ForeignKey(User, on_delete=models.CASCADE,
+                               related_name='reviews')
     score = models.PositiveSmallIntegerField(
         verbose_name='Оценка', choices=[(r, r) for r in range(1, 11)],
     )
-    pub_date = models.DateTimeField(
-        verbose_name='Дата оценки', auto_now_add=True, db_index=True
-    )
+    pub_date = models.DateTimeField(verbose_name='Дата оценки',
+                                    auto_now_add=True, db_index=True)
 
-    def __str__(self):
-        return self.text
-    """Функция save меняет средний рейтинг произведения в реальном времени."""
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        self.score_avg = Review.objects.filter(title_id=self.title).aggregate(
-            Avg('score')
-        )
-        self.title.rating = self.score_avg['score__avg']
+        score_avg = Review.objects.filter(title=self.title).aggregate(Avg('score'))
+        self.title.rating = score_avg['score__avg'] or 0
         self.title.save()
 
 
