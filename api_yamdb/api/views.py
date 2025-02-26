@@ -116,32 +116,29 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet для работы с категориями (Category).
-    Наследуется от ModelViewSet,
-    который предоставляет стандартные действия:
-    list(), create(), retrieve(), update(), partial_update(), destroy().
-    """
-    queryset = Category.objects.all()  # Указываем, какие данные обрабатываем
-    serializer_class = CategorySerializer  # Какой сериализатор использовать
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
+    http_method_names = ['get', 'post', 'delete']  # Отключаем retrieve (GET по slug)
+
+    def retrieve(self, request, *args, **kwargs):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class GenreViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet для работы с жанрами (Genre).
-    Аналогично CategoryViewSet.
-    """
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
+    http_method_names = ['get', 'post', 'delete']  # Отключаем retrieve (GET по slug)
 
+    def retrieve(self, request, *args, **kwargs):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 class TitleViewSet(viewsets.ModelViewSet):
     """
