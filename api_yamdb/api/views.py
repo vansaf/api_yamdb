@@ -220,32 +220,43 @@ class CommentsViewSet(viewsets.ModelViewSet):
         get_object_or_404(Comment, id=kwargs.get('comment_id'))
         return super().destroy(request, *args, **kwargs)
 
+
 class SignUpView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = SignUpSerializer
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
+        email = request.data.get('email')
+        username = request.data.get('username')
+
+        # Проверяем, существует ли пользователь с указанными username и email
+        if User.objects.filter(username=username, email=email).exists():
+            # Если пользователь существует, генерируем новый код подтверждения
+            confirmation_code = generate_confirmation_code()
+            request.session['confirmation_code'] = confirmation_code
+            send_confirmation_code(email, confirmation_code)
+
+            # Ответ с информацией о пользователе и кодом подтверждения
+            return Response({
+                'email': email,
+                'username': username
+            }, status=status.HTTP_200_OK)
+
+        # Если пользователя не существует, продолжаем обычную процедуру регистрации
         serializer = SignUpSerializer(data=request.data)
         if serializer.is_valid():
-            email = serializer.validated_data['email']
-            username = serializer.validated_data['username']
-            
-            try:
-                user = User.objects.get(email=email, username=username)
-            except User.DoesNotExist:
-
-                user = serializer.save()
+            user = serializer.save()
             confirmation_code = generate_confirmation_code()
             request.session['confirmation_code'] = confirmation_code
             send_confirmation_code(user.email, confirmation_code)
             return Response({
-                'email': serializer.validated_data['email'],
-                'username': serializer.validated_data['username']
+                'email': email,
+                'username': username
             }, status=status.HTTP_200_OK)
         else:
-            return Response(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class TokenView(views.APIView):
     queryset = User.objects.all()
@@ -255,18 +266,20 @@ class TokenView(views.APIView):
     def post(self, request):
         serializer = TokenSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
-            user = User.objects.get(username=serializer.validated_data['username'])
+            username = serializer.validated_data['username']
+            user = User.objects.get(username=username)
             token = AccessToken.for_user(user)
-            return Response({'token': token}, status=status.HTTP_200_OK)
-        else:
-            return Response(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response({'token': str(token)}, status=status.HTTP_200_OK)
+        errors = serializer.errors
+        if 'username' in errors and errors['username'][0].code == 'Пользователь не найден':
+            return Response(errors, status=status.HTTP_404_NOT_FOUND)
+        return Response(errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = (IsAdmin, IsAuthenticated,)
+    permission_classes = (IsAdmin,)
     lookup_field = 'username'
     http_method_names = ['get', 'post', 'patch', 'delete']
     filter_backends = (filters.SearchFilter,)
