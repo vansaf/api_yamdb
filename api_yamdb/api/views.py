@@ -1,21 +1,7 @@
-"""
-Здесь описываются классы ViewSet,
-которые определяют логику обработки запросов
-к моделям Category, Genre и Title.
-"""
-
-from rest_framework.response import Response
-
 from django.shortcuts import get_object_or_404
 
-
-from rest_framework.pagination import PageNumberPagination
-
-from reviews.models import Category, Genre, Title, Review, Comment, User
-from rest_framework_simplejwt.tokens import AccessToken
-from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
+
 from rest_framework import (
     filters,
     generics,
@@ -25,7 +11,13 @@ from rest_framework import (
     views,
     viewsets,
 )
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
+from rest_framework_simplejwt.tokens import AccessToken
+
+from reviews.models import Category, Genre, Title, Review, Comment, User
 from .pagination import CustomPagination
 from .permissions import (IsAdminIsModeratorIsAuthorOrReadOnly,
                           IsAdminOrReadOnly,
@@ -49,6 +41,17 @@ class SignUpView(generics.CreateAPIView):
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
+        email = request.data.get('email')
+        username = request.data.get('username')
+
+        if User.objects.filter(username=username, email=email).exists():
+            confirmation_code = generate_confirmation_code()
+            request.session['confirmation_code'] = confirmation_code
+            send_confirmation_code(email, confirmation_code)
+            return Response({
+                'email': email,
+                'username': username
+            }, status=status.HTTP_200_OK)
         serializer = SignUpSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
@@ -56,8 +59,8 @@ class SignUpView(generics.CreateAPIView):
             request.session['confirmation_code'] = confirmation_code
             send_confirmation_code(user.email, confirmation_code)
             return Response({
-                'email': serializer.validated_data['email'],
-                'username': serializer.validated_data['username']
+                'email': email,
+                'username': username
             }, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors,
@@ -70,16 +73,46 @@ class TokenView(views.APIView):
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
-        serializer = TokenSerializer(data=request.data)
+        serializer = TokenSerializer(data=request.data,
+                                     context={'request': request})
         if serializer.is_valid():
-            user = User.objects.get(
-                username=serializer.validated_data['username']
-            )
+            username = serializer.validated_data['username']
+            user = User.objects.get(username=username)
             token = AccessToken.for_user(user)
-            return Response({'token': token}, status=status.HTTP_200_OK)
-        else:
-            return Response(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response({'token': str(token)}, status=status.HTTP_200_OK)
+        errors = serializer.errors
+        if 'username' in errors and errors[
+            'username'][0].code == 'Пользователь не найден':
+            return Response(errors, status=status.HTTP_404_NOT_FOUND)
+        return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = (IsAdmin,)
+    lookup_field = 'username'
+    http_method_names = ['get', 'post', 'patch', 'delete']
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('username',)
+
+    @action(detail=False,
+            methods=['get', 'patch'],
+            permission_classes=[IsAuthenticated])
+    def me(self, request):
+        if request.method == 'GET':
+            serializer = self.get_serializer(instance=request.user)
+            return Response(serializer.data)
+
+        if request.method == 'PATCH':
+            serializer = self.get_serializer(
+                data=request.data,
+                instance=request.user,
+                partial=True
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -219,86 +252,3 @@ class CommentsViewSet(viewsets.ModelViewSet):
 
         get_object_or_404(Comment, id=kwargs.get('comment_id'))
         return super().destroy(request, *args, **kwargs)
-
-
-class SignUpView(generics.CreateAPIView):
-    queryset = User.objects.all()
-    serializer_class = SignUpSerializer
-    permission_classes = (permissions.AllowAny,)
-
-    def post(self, request):
-        email = request.data.get('email')
-        username = request.data.get('username')
-
-        # Проверяем, существует ли пользователь с указанными username и email
-        if User.objects.filter(username=username, email=email).exists():
-            # Если пользователь существует, генерируем новый код подтверждения
-            confirmation_code = generate_confirmation_code()
-            request.session['confirmation_code'] = confirmation_code
-            send_confirmation_code(email, confirmation_code)
-
-            # Ответ с информацией о пользователе и кодом подтверждения
-            return Response({
-                'email': email,
-                'username': username
-            }, status=status.HTTP_200_OK)
-
-        # Если пользователя не существует, продолжаем обычную процедуру регистрации
-        serializer = SignUpSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            confirmation_code = generate_confirmation_code()
-            request.session['confirmation_code'] = confirmation_code
-            send_confirmation_code(user.email, confirmation_code)
-            return Response({
-                'email': email,
-                'username': username
-            }, status=status.HTTP_200_OK)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class TokenView(views.APIView):
-    queryset = User.objects.all()
-    serializer_class = TokenSerializer
-    permission_classes = (permissions.AllowAny,)
-
-    def post(self, request):
-        serializer = TokenSerializer(data=request.data, context={'request': request})
-        if serializer.is_valid():
-            username = serializer.validated_data['username']
-            user = User.objects.get(username=username)
-            token = AccessToken.for_user(user)
-            return Response({'token': str(token)}, status=status.HTTP_200_OK)
-        errors = serializer.errors
-        if 'username' in errors and errors['username'][0].code == 'Пользователь не найден':
-            return Response(errors, status=status.HTTP_404_NOT_FOUND)
-        return Response(errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-    permission_classes = (IsAdmin,)
-    lookup_field = 'username'
-    http_method_names = ['get', 'post', 'patch', 'delete']
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('username',)
-
-    @action(detail=False,
-            methods=['get', 'patch'],
-            permission_classes=[IsAuthenticated])
-    def me(self, request):
-        if request.method == 'GET':
-            serializer = self.get_serializer(instance=request.user)
-            return Response(serializer.data)
-
-        if request.method == 'PATCH':
-            serializer = self.get_serializer(
-                data=request.data,
-                instance=request.user,
-                partial=True
-            )
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            return Response(serializer.data)
