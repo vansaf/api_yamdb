@@ -113,6 +113,31 @@ class Title(models.Model):
         return self.name
 
 
+class GenreTitle(models.Model):
+    """
+    Промежуточная модель для связи Title и Genre.
+    Каждая пара (title, genre) должна быть уникальной.
+    """
+    title = models.ForeignKey(
+        Title,
+        on_delete=models.CASCADE,
+        related_name='genre_titles'
+    )
+    genre = models.ForeignKey(
+        Genre,
+        on_delete=models.CASCADE,
+        related_name='genre_titles'
+    )
+
+    class Meta:
+        unique_together = ('title', 'genre')
+        verbose_name = 'Жанр Названия'
+        verbose_name_plural = 'Жанры Названий'
+
+    def __str__(self):
+        return f"{self.title} — {self.genre}"
+
+
 class Review(models.Model):
     """Модель для работы с отзывами."""
     title = models.ForeignKey(
