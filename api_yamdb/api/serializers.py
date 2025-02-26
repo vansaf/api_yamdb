@@ -81,7 +81,7 @@ class CategorySerializer(serializers.ModelSerializer):
         # С какой моделью работаем:
         model = Category
         # Какие поля будем сериализовать:
-        fields = '__all__'
+        exclude = ('id',)
 
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -91,7 +91,7 @@ class GenreSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = Genre
-        fields = '__all__'
+        exclude = ('id',)
 
 
 class TitleSerializer(serializers.ModelSerializer):

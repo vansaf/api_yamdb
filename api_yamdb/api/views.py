@@ -125,6 +125,9 @@ class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()  # Указываем, какие данные обрабатываем
     serializer_class = CategorySerializer  # Какой сериализатор использовать
     permission_classes = (IsAdminOrReadOnly,)
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+    lookup_field = 'slug'
 
 
 class GenreViewSet(viewsets.ModelViewSet):
@@ -135,6 +138,9 @@ class GenreViewSet(viewsets.ModelViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     permission_classes = (IsAdminOrReadOnly,)
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+    lookup_field = 'slug'
 
 
 class TitleViewSet(viewsets.ModelViewSet):

@@ -98,12 +98,9 @@ class Title(models.Model):
     category = models.ForeignKey(
         Category, on_delete=models.SET_NULL, null=True, related_name='titles'
     )
-    genre = models.ManyToManyField(
-        Genre,
-        through='GenreTitle',
-        verbose_name='Жанр'
-    )
-    rating = models.FloatField(default=0, verbose_name='Рейтинг')  # Добавлено
+    genre = models.ManyToManyField(Genre, verbose_name='Жанр', through='GenreTitle')
+
+    #rating = models.FloatField(default=0, verbose_name='Рейтинг')  # Добавлено
 
     def __str__(self):
         return self.name
