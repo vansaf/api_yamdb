@@ -83,9 +83,7 @@ class TokenView(views.APIView):
             token = AccessToken.for_user(user)
             return Response({'token': str(token)}, status=status.HTTP_200_OK)
         errors = serializer.errors
-        if 'username' in errors and errors(
-            ['username'][0] == 'Пользователь не найден'
-        ):
+        if 'username' in errors and errors['username'][0] == 'Пользователь не найден':
             return Response(errors, status=status.HTTP_404_NOT_FOUND)
         return Response(errors, status=status.HTTP_400_BAD_REQUEST)
 
