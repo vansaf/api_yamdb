@@ -1,6 +1,6 @@
 import re
 
-from rest_framework import serializers, status
+from rest_framework import serializers
 
 from reviews.models import Category, Comment, Genre, Review, Title, User
 
@@ -37,10 +37,12 @@ class TokenSerializer(serializers.Serializer):
     def validate_username(self, value):
         if User.objects.filter(username=value).exists():
             return value
-        raise serializers.ValidationError('Пользователь не найден', code='Пользователь не найден')
+        raise serializers.ValidationError('Пользователь не найден',
+                                          code='user not found')
 
     def validate_confirmation_code(self, value):
-        session_confirmation_code = self.context['request'].session.get('confirmation_code')
+        session_confirmation_code = self.context[
+            'request'].session.get('confirmation_code')
         if value != session_confirmation_code:
             raise serializers.ValidationError('Неправильный код')
         return value
@@ -56,8 +58,7 @@ class UserSerializer(serializers.ModelSerializer):
             'first_name',
             'last_name',
             'bio',
-            'role'
-        )
+            'role')
 
     def validate_username(self, value):
         if not re.match(r'^[\w.@+-]+$', value):

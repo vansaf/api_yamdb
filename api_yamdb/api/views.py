@@ -36,7 +36,6 @@ from .utils import generate_confirmation_code, send_confirmation_code
 
 
 class SignUpView(generics.CreateAPIView):
-    queryset = User.objects.all()
     serializer_class = SignUpSerializer
     permission_classes = (permissions.AllowAny,)
 
@@ -68,7 +67,6 @@ class SignUpView(generics.CreateAPIView):
 
 
 class TokenView(views.APIView):
-    queryset = User.objects.all()
     serializer_class = TokenSerializer
     permission_classes = (permissions.AllowAny,)
 
@@ -81,8 +79,7 @@ class TokenView(views.APIView):
             token = AccessToken.for_user(user)
             return Response({'token': str(token)}, status=status.HTTP_200_OK)
         errors = serializer.errors
-        if 'username' in errors and errors[
-            'username'][0].code == 'Пользователь не найден':
+        if 'username' in errors and errors['username'][0].code == 'user not found':
             return Response(errors, status=status.HTTP_404_NOT_FOUND)
         return Response(errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -98,7 +95,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=False,
             methods=['get', 'patch'],
-            permission_classes=[IsAuthenticated])
+            permission_classes=(IsAuthenticated,))
     def me(self, request):
         if request.method == 'GET':
             serializer = self.get_serializer(instance=request.user)
@@ -108,8 +105,7 @@ class UserViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(
                 data=request.data,
                 instance=request.user,
-                partial=True
-            )
+                partial=True)
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data)

@@ -1,50 +1,60 @@
-
 from django.db import models
 from django.db.models import Avg
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser
 
+from .constants import (MAX_USERNAME_FIELD_LENGHT,
+                        MAX_FIRST_NAME_FIELD_LENGHT,
+                        MAX_LAST_NAME_FIELD_LENGHT,
+                        MAX_EMAIL_FIELD_LENGHT,
+                        MAX_ROLE_FIELD_LENGHT)
+
 
 class CustomUser(AbstractUser):
+    """Кастомная модель пользователя."""
 
     class RoleChoices(models.TextChoices):
+        """Класс выбора роли для пользователя."""
 
         ADMIN = 'admin', 'Admin'
         MODERATOR = 'moderator', 'Moderator'
         USER = 'user', 'User'
 
-    username = models.CharField('Логин', max_length=150,
-                                unique=True, blank=False)
+    username = models.CharField('Логин',
+                                max_length=MAX_USERNAME_FIELD_LENGHT,
+                                unique=True)
     email = models.EmailField('Электронная почта',
-                              max_length=254, unique=True, blank=False)
-    first_name = models.TextField('Имя', max_length=150, blank=True)
-    last_name = models.TextField('Фамилия', max_length=150, blank=True)
+                              max_length=MAX_EMAIL_FIELD_LENGHT,
+                              unique=True)
+    first_name = models.TextField('Имя',
+                                  max_length=MAX_FIRST_NAME_FIELD_LENGHT,
+                                  blank=True)
+    last_name = models.TextField('Фамилия',
+                                 max_length=MAX_LAST_NAME_FIELD_LENGHT,
+                                 blank=True)
     bio = models.TextField('Биография', blank=True)
     role = models.CharField('Статус',
-                            max_length=100,
+                            max_length=MAX_ROLE_FIELD_LENGHT,
                             choices=RoleChoices.choices,
                             default=RoleChoices.USER)
 
     @property
     def is_admin(self):
-        """Возвращает True, если роль пользователя — Admin."""
         return self.role == self.RoleChoices.ADMIN
 
     @property
     def is_moderator(self):
-        """Возвращает True, если роль пользователя — Moderator."""
         return self.role == self.RoleChoices.MODERATOR
 
     def __str__(self):
         return self.username
 
+    class Meta:
+        verbose_name = 'пользователь'
+        verbose_name_plural = 'Пользователи'
+
 
 User = get_user_model()
-
-"""
-Здесь описываются модели, которые будут храниться в базе данных.
-Модели Category, Genre, Title - зона ответственности Второго разработчика.
-"""
 
 
 class Category(models.Model):
