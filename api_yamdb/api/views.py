@@ -188,6 +188,7 @@ class CommentsViewSet(viewsets.ModelViewSet):
         IsAuthenticatedOrReadOnly,
         IsAdminIsModeratorIsAuthorOrReadOnly
     )
+    http_method_names = ['get', 'post', 'patch', 'delete']  # Отключаем PUT
 
     def get_queryset(self):
         title_id = self.kwargs.get('title_id')
