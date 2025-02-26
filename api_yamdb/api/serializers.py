@@ -117,12 +117,22 @@ class TokenSerializer(serializers.ModelSerializer):
         model = User
         fields = ('username', 'confirmation_code')
 
-    def validate(self, attrs):
-        confirmation_code = attrs.get('confirmation_code')
+   # def validate(self, attrs):
+   #     confirmation_code = attrs.get('confirmation_code')
+   #     session_confirmation_code = self.context['request'].session.get('confirmation_code')
+   #     if confirmation_code != session_confirmation_code:
+   #         raise serializers.ValidationError()
+   #     return attrs
+    def validate_username(self, value):
+        if User.objects.filter(username=value).exists():
+            return value
+        raise serializers.ValidationError()
+
+    def validate_confirmation_code(self, value):
         session_confirmation_code = self.context['request'].session.get('confirmation_code')
-        if confirmation_code != session_confirmation_code:
+        if value != session_confirmation_code:
             raise serializers.ValidationError()
-        return attrs
+        return value
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -145,3 +155,8 @@ class UserSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError()
         return value
 
+    def validate_role(self, value):
+        user = self.context['request'].user
+        if user.role != value and not user.is_admin:
+            raise serializers.ValidationError("Нельзя изменять роль.")
+        return value
