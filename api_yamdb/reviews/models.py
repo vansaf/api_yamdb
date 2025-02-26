@@ -81,46 +81,27 @@ class Genre(models.Model):
 
 
 class Title(models.Model):
-    """
-    Модель для произведений (фильмы, книги, музыка).
-
-    Поля:
-    name - название произведения
-    year - год выпуска
-    description - описание (необязательно)
-    category - связь с моделью Category (ForeignKey)
-    genre - связь с моделью Genre (ManyToManyField,
-            т.к. произведение может иметь несколько жанров)
-    """
     name = models.CharField(max_length=256)
     year = models.PositiveIntegerField()
     description = models.TextField(blank=True, null=True)
     category = models.ForeignKey(
         Category, on_delete=models.SET_NULL, null=True, related_name='titles'
     )
-    genre = models.ManyToManyField(Genre, verbose_name='Жанр', through='GenreTitle')
-
-    #rating = models.FloatField(default=0, verbose_name='Рейтинг')  # Добавлено
+    genre = models.ManyToManyField(Genre, through='GenreTitle')
+    #rating = models.FloatField(null=True, blank=True)
 
     def __str__(self):
         return self.name
 
 
 class GenreTitle(models.Model):
-    """
-    Промежуточная модель для связи Title и Genre.
-    Каждая пара (title, genre) должна быть уникальной.
-    """
     title = models.ForeignKey(Title, on_delete=models.CASCADE)
     genre = models.ForeignKey(Genre, on_delete=models.CASCADE)
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['title', 'genre'],
-                                    name='unique_title_genre')
+            models.UniqueConstraint(fields=['title', 'genre'], name='unique_title_genre')
         ]
-        verbose_name = 'Жанр Названия'
-        verbose_name_plural = 'Жанры Названий'
 
     def __str__(self):
         return f"{self.title} — {self.genre}"
