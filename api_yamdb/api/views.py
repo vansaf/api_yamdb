@@ -247,14 +247,13 @@ class SignUpView(generics.CreateAPIView):
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
 
-
 class TokenView(views.APIView):
     queryset = User.objects.all()
     serializer_class = TokenSerializer
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
-        serializer = TokenSerializer(data=request.data)
+        serializer = TokenSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             user = User.objects.get(username=serializer.validated_data['username'])
             token = AccessToken.for_user(user)
@@ -267,7 +266,7 @@ class TokenView(views.APIView):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = (IsAuthenticated, IsAdmin,)
+    permission_classes = (IsAdmin, IsAuthenticated,)
     lookup_field = 'username'
     http_method_names = ['get', 'post', 'patch', 'delete']
     filter_backends = (filters.SearchFilter,)
