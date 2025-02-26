@@ -97,7 +97,7 @@ class Title(models.Model):
         Category, on_delete=models.SET_NULL, null=True, related_name='titles'
     )
     genre = models.ManyToManyField(Genre, through='GenreTitle')
-    #rating = models.FloatField(null=True, blank=True)
+    rating = models.FloatField(null=True, blank=True)
 
     def __str__(self):
         return self.name
