@@ -7,7 +7,8 @@ from .constants import (MAX_USERNAME_FIELD_LENGHT,
                         MAX_FIRST_NAME_FIELD_LENGHT,
                         MAX_LAST_NAME_FIELD_LENGHT,
                         MAX_EMAIL_FIELD_LENGHT,
-                        MAX_ROLE_FIELD_LENGHT)
+                        MAX_ROLE_FIELD_LENGHT,
+                        MAX_FIELD_LENGHT_STR)
 
 
 class CustomUser(AbstractUser):
@@ -195,4 +196,4 @@ class Comment(models.Model):
         verbose_name_plural = 'Комментарии'
 
     def __str__(self):
-        return self.text[:15]
+        return self.text[:MAX_FIELD_LENGHT_STR]
