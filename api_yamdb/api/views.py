@@ -8,7 +8,6 @@ from rest_framework import (
     filters,
     generics,
     permissions,
-    serializers,
     status,
     views,
     viewsets,
@@ -40,27 +39,20 @@ from .utils import generate_confirmation_code, send_confirmation_code
 
 
 class SignUpView(generics.CreateAPIView):
+    """Класс CreateAPIView для регистрации пользователей в системе."""
     serializer_class = SignUpSerializer
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
         email = request.data.get('email')
         username = request.data.get('username')
-
-        if User.objects.filter(username=username, email=email).exists():
+        serializer = SignUpSerializer(data=request.data)
+        if (User.objects.filter(username=username, email=email).exists()
+                or serializer.is_valid()):
             confirmation_code = generate_confirmation_code()
             request.session['confirmation_code'] = confirmation_code
             send_confirmation_code(email, confirmation_code)
-            return Response({
-                'email': email,
-                'username': username
-            }, status=status.HTTP_200_OK)
-        serializer = SignUpSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            confirmation_code = generate_confirmation_code()
-            request.session['confirmation_code'] = confirmation_code
-            send_confirmation_code(user.email, confirmation_code)
+            serializer.save() if serializer.is_valid() else None
             return Response({
                 'email': email,
                 'username': username
@@ -71,6 +63,7 @@ class SignUpView(generics.CreateAPIView):
 
 
 class TokenView(views.APIView):
+    """Класс APIView для создания токена зарегистрированному пользователю."""
     serializer_class = TokenSerializer
     permission_classes = (permissions.AllowAny,)
 
@@ -83,12 +76,14 @@ class TokenView(views.APIView):
             token = AccessToken.for_user(user)
             return Response({'token': str(token)}, status=status.HTTP_200_OK)
         errors = serializer.errors
-        if 'username' in errors and errors['username'][0] == 'Пользователь не найден':
+        if ('username' in errors
+                and errors['username'][0].code == 'user not found'):
             return Response(errors, status=status.HTTP_404_NOT_FOUND)
         return Response(errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserViewSet(viewsets.ModelViewSet):
+    """Класс ViewSet для работы с моделью User."""
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = (IsAdmin,)
@@ -104,7 +99,6 @@ class UserViewSet(viewsets.ModelViewSet):
         if request.method == 'GET':
             serializer = self.get_serializer(instance=request.user)
             return Response(serializer.data)
-
         if request.method == 'PATCH':
             serializer = self.get_serializer(
                 data=request.data,
