@@ -8,29 +8,16 @@ from reviews.models import (Category,
                             User)
 
 
-class TitleInline(admin.StackedInline):
-    """Класс для создания встроенного редактора произведений."""
-
-    model = Title
-    extra = 0
-
-
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     """Класс настройки административной панели для модели Category."""
-
-    inlines = (
-        TitleInline,
-    )
+    list_display = ('name', 'slug')
 
 
 @admin.register(Genre)
 class GenreAdmin(admin.ModelAdmin):
     """Класс настройки административной панели для модели Genre."""
-
-    inlines = (
-        TitleInline,
-    )
+    list_display = ('name', 'slug')
 
 
 @admin.register(GenreTitle)
@@ -58,7 +45,6 @@ class ReviewAdmin(admin.ModelAdmin):
 
     list_display = (
         'text',
-        'title',
         'author',
         'pub_date',
     )
@@ -73,19 +59,14 @@ class TitleAdmin(admin.ModelAdmin):
         'name',
         'year',
         'description',
-        'category',
-        'genre',
+        'category'
     )
     list_editable = (
         'description',
-        'category',
-        'location',
         'year',
-        'name',
     )
     search_fields = ('name', 'genre', 'category')
     list_filter = ('year',)
-    list_display_links = ('name',)
 
 
 @admin.register(User)
