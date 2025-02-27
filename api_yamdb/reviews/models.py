@@ -196,6 +196,7 @@ class Review(models.Model):
         ]
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
+        ordering = ('-pub_date', '-score',)
 
     def __str__(self):
         return self.text[:MAX_FIELD_LENGHT_STR]
@@ -222,6 +223,7 @@ class Comment(models.Model):
     class Meta:
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
+        ordering = ('-pub_date',)
 
     def __str__(self):
         return self.text[:MAX_FIELD_LENGHT_STR]
