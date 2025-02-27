@@ -61,6 +61,7 @@ class TokenSerializer(serializers.Serializer):
     Сериализатор для выдачи токена зарегистрированному пользователю.
     Производит валидацию полей confirmation_code и username.
     """
+
     confirmation_code = serializers.CharField(max_length=MAX_CODE_LENGHT)
     username = serializers.CharField()
 
@@ -131,6 +132,7 @@ class TitleReadSerializer(serializers.ModelSerializer):
     Сериализатор для чтения произведений (Title).
     Включает вложенные данные для категории и жанров, а также рейтинг.
     """
+
     category = CategorySerializer(read_only=True)
     genre = GenreSerializer(read_only=True, many=True)
     rating = serializers.IntegerField(read_only=True)
@@ -145,6 +147,7 @@ class TitleWriteSerializer(serializers.ModelSerializer):
     Сериализатор для создания и обновления произведений (Title).
     Использует slug-поля для категории и жанров.
     """
+
     category = serializers.SlugRelatedField(
         queryset=Category.objects.all(), slug_field='slug'
     )
@@ -163,6 +166,7 @@ class ReviewSerializer(serializers.ModelSerializer):
     Производит валидацию оценки и проверяет наличие
     существующего отзыва от того же пользователя для произведения.
     """
+
     title = serializers.SlugRelatedField(
         slug_field='name', read_only=True
     )
@@ -196,6 +200,7 @@ class CommentSerializer(serializers.ModelSerializer):
     Сериализатор для модели Comment.
     Представляет автора комментария в виде username.
     """
+
     author = serializers.SlugRelatedField(
         slug_field='username', read_only=True
     )

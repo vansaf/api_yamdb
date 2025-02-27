@@ -1,4 +1,5 @@
 from random import choice
+
 from django.core.mail import send_mail
 
 from .constants import SUBJECT, FROM_EMAIL

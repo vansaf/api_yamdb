@@ -141,7 +141,6 @@ AUTH_USER_MODEL = 'reviews.CustomUser'
 
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 EMAIL_FILE_PATH = BASE_DIR / 'sent_emails'
-DEFAULT_FROM_EMAIL = 'support_yamdb@yandex.ru'
 
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_SECURE = True

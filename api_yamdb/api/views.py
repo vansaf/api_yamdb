@@ -31,6 +31,7 @@ class SignUpView(generics.CreateAPIView):
     """
     CreateAPIView для регистрации пользователей в системе.
     """
+
     serializer_class = SignUpSerializer
     permission_classes = (permissions.AllowAny,)
 
@@ -55,6 +56,7 @@ class TokenView(views.APIView):
     """
     APIView для создания токена зарегистрированному пользователю.
     """
+
     serializer_class = TokenSerializer
     permission_classes = (permissions.AllowAny,)
 
@@ -78,6 +80,7 @@ class UserViewSet(viewsets.ModelViewSet):
     """
     ViewSet для работы с моделью User.
     """
+
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = (IsAdmin,)
@@ -105,6 +108,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
     """
     ViewSet для управления категориями произведений.
     """
+
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = (IsAdminOrReadOnly,)
@@ -121,6 +125,7 @@ class GenreViewSet(CategoryViewSet):
     """
     ViewSet для управления жанрами произведений.
     """
+
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
 
@@ -129,6 +134,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     """
     ViewSet для работы с произведениями (Title).
     """
+
     queryset = Title.objects.annotate(rating=Avg('reviews__score')).all()
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
@@ -145,6 +151,7 @@ class ReviewsViewSet(viewsets.ModelViewSet):
     """
     ViewSet для управления отзывами.
     """
+
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
     permission_classes = (
@@ -170,6 +177,7 @@ class CommentsViewSet(viewsets.ModelViewSet):
     """
     ViewSet для управления комментариями к отзывам.
     """
+
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     permission_classes = (

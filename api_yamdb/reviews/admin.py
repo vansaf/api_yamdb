@@ -11,18 +11,21 @@ from reviews.models import (Category,
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     """Класс настройки административной панели для модели Category."""
+
     list_display = ('name', 'slug')
 
 
 @admin.register(Genre)
 class GenreAdmin(admin.ModelAdmin):
     """Класс настройки административной панели для модели Genre."""
+
     list_display = ('name', 'slug')
 
 
 @admin.register(GenreTitle)
 class GenreTitleAdmin(admin.ModelAdmin):
     """Класс настройки административной панели связанной модели GenreTitle."""
+
     list_display = ('title', 'genre')
 
 
