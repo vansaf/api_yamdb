@@ -1,44 +1,67 @@
-import re
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
+
 from rest_framework import serializers
 
+import re
+
 from reviews.models import Category, Comment, Genre, Review, Title, User
+from .constants import (BAD_USERNAME,
+                        MAX_CODE_LENGHT,
+                        USERNAME_SYMBOLS)
+from reviews.constants import (MAX_USERNAME_FIELD_LENGHT,
+                               MAX_EMAIL_FIELD_LENGHT)
 
 
 class SignUpSerializer(serializers.ModelSerializer):
-
+    """
+    Сериализатор для регистрации пользователя в системе.
+    Валидация полей email и username.
+    """
     class Meta:
         model = User
         fields = ('email', 'username')
 
     def validate_username(self, value):
-        if value == 'me':
-            raise serializers.ValidationError()
-        if len(value) > 150:
-            raise serializers.ValidationError()
-        if not re.match(r'^[\w.@+-]+$', value):
-            raise serializers.ValidationError()
+        bad_username = [name for name in BAD_USERNAME if name == value]
+        if len(bad_username) != 0:
+            raise serializers.ValidationError(f'Неподходящее имя {value}.'
+                                              'Попробуйте выбрать другое.')
+        if len(value) > MAX_USERNAME_FIELD_LENGHT:
+            raise serializers.ValidationError(
+                f'Имя {value} превышает допустимую'
+                'длину в {MAX_USERNAME_FIELD_LENGHT} символов')
+        if not re.match(USERNAME_SYMBOLS, value):
+            raise serializers.ValidationError('Недопустимые символы в имени '
+                                              f'{value}')
         if User.objects.filter(username=value).exists():
-            raise serializers.ValidationError()
+            raise serializers.ValidationError('Пользователь с таким именем'
+                                              ' уже зарегистрирован в системе')
         return value
 
     def validate_email(self, value):
-        if len(value) > 254:
-            raise serializers.ValidationError()
+        if len(value) > MAX_EMAIL_FIELD_LENGHT:
+            raise serializers.ValidationError(
+                f'Почта {value} превышает допустимую'
+                'длину в {MAX_EMAIL_FIELD_LENGHT} символов')
         if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError()
+            raise serializers.ValidationError('Пользователь с такой почтой'
+                                              ' уже зарегистрирован в системе')
         return value
 
 
 class TokenSerializer(serializers.Serializer):
-    confirmation_code = serializers.CharField(max_length=6)
+    """
+    Сериализатор для выдачи токена зарегистрированному пользователю.
+    Валидация полей confirmation_code и username.
+    """
+    confirmation_code = serializers.CharField(max_length=MAX_CODE_LENGHT)
     username = serializers.CharField()
 
     def validate_username(self, value):
         if User.objects.filter(username=value).exists():
             return value
-        raise serializers.ValidationError('Пользователь не найден',
+        raise serializers.ValidationError(f'Пользователь {value} не найден',
                                           code='user not found')
 
     def validate_confirmation_code(self, value):
@@ -50,7 +73,10 @@ class TokenSerializer(serializers.Serializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-
+    """
+    Сериализатор для эндпоинта users.
+    Валидация полей role и username.
+    """
     class Meta:
         model = User
         fields = (
@@ -62,14 +88,14 @@ class UserSerializer(serializers.ModelSerializer):
             'role')
 
     def validate_username(self, value):
-        if not re.match(r'^[\w.@+-]+$', value):
+        if not re.match(USERNAME_SYMBOLS, value):
             raise serializers.ValidationError()
         return value
 
     def validate_role(self, value):
         user = self.context['request'].user
         if user.role != value and not user.is_admin:
-            raise serializers.ValidationError('Нельзя изменять роль.')
+            raise serializers.ValidationError('Запрещено изменять права.')
         return value
 
 
