@@ -12,6 +12,7 @@ from .constants import (
     MAX_NAME_LENGTH,
     MIN_REVIEW_SCORE,
     MAX_REVIEW_SCORE,
+    MAX_FIELD_LENGHT_STR
 )
 
 
@@ -197,7 +198,7 @@ class Review(models.Model):
         verbose_name_plural = 'Отзывы'
 
     def __str__(self):
-        return self.text[:15]
+        return self.text[:MAX_FIELD_LENGHT_STR]
 
 
 class Comment(models.Model):
@@ -223,4 +224,4 @@ class Comment(models.Model):
         verbose_name_plural = 'Комментарии'
 
     def __str__(self):
-        return self.text[:15]
+        return self.text[:MAX_FIELD_LENGHT_STR]
