@@ -4,13 +4,13 @@ from rest_framework.routers import DefaultRouter
 
 from .views import (
     CategoryViewSet,
+    CommentsViewSet,
     GenreViewSet,
-    TitleViewSet,
-    UserViewSet,
+    ReviewsViewSet,
     SignUpView,
     TokenView,
-    ReviewsViewSet,
-    CommentsViewSet
+    TitleViewSet,
+    UserViewSet,
 )
 
 app_name = 'api'

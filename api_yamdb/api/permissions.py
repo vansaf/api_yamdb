@@ -24,11 +24,8 @@ class IsAdminOrReadOnly(BasePermission):
     """
 
     def has_permission(self, request, view):
-        if request.method in SAFE_METHODS:
-            return True
-        if request.user.is_authenticated:
-            return request.user.is_admin
-        return False
+        return (request.user.is_admin if request.user.is_authenticated
+                else request.method in SAFE_METHODS)
 
 
 class IsAdmin(BasePermission):
