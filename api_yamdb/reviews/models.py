@@ -72,40 +72,40 @@ class CustomUser(AbstractUser):
 User = get_user_model()
 
 
-class Category(models.Model):
-    """Модель для категорий (например, 'Фильмы', 'Книги', 'Музыка')."""
-
+class BaseCategoryGenre(models.Model):
+    """
+    Базовая модель для категорий и жанров.
+    """
     name = models.CharField(
-        'Название категории',
-        max_length=MAX_NAME_LENGTH
+        max_length=256,
+        verbose_name='Название'
     )
-    slug = models.SlugField('Идентификатор', unique=True)
-
-    def __str__(self):
-        return self.name
+    slug = models.SlugField(
+        max_length=50,
+        unique=True,
+        verbose_name='Слаг'
+    )
 
     class Meta:
-        verbose_name = 'Категория'
+        abstract = True
+
+
+class Category(BaseCategoryGenre):
+    """
+    Модель категории.
+    """
+    class Meta(BaseCategoryGenre.Meta):
+        verbose_name = 'категория'
         verbose_name_plural = 'Категории'
-        ordering = ('name',)
 
 
-class Genre(models.Model):
-    """Модель для жанров (например, 'Рок', 'Артхаус', 'Сказка')."""
-
-    name = models.CharField(
-        'Название жанра',
-        max_length=MAX_NAME_LENGTH
-    )
-    slug = models.SlugField('Идентификатор', unique=True)
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        verbose_name = 'Жанр'
+class Genre(BaseCategoryGenre):
+    """
+    Модель жанра.
+    """
+    class Meta(BaseCategoryGenre.Meta):
+        verbose_name = 'жанр'
         verbose_name_plural = 'Жанры'
-        ordering = ('name',)
 
 
 class Title(models.Model):
