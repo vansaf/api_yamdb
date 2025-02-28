@@ -3,7 +3,12 @@ from django.db.models import Avg
 from django_filters.rest_framework import DjangoFilterBackend
 
 from rest_framework import (
-    filters, generics, permissions, status, views, viewsets
+    filters,
+    generics,
+    permissions,
+    status,
+    views,
+    viewsets
 )
 from rest_framework.decorators import action
 from rest_framework.permissions import (
@@ -12,16 +17,28 @@ from rest_framework.permissions import (
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 
-from reviews.models import Category, Genre, Title, Review, Comment, User
+from reviews.models import (
+    Category,
+    Comment,
+    Genre,
+    Review,
+    Title,
+    User)
 from .permissions import (
-    IsAdminIsModeratorIsAuthorOrReadOnly, IsAdminOrReadOnly, IsAdmin
+    IsAdminIsModeratorIsAuthorOrReadOnly,
+    IsAdminOrReadOnly,
+    IsAdmin
 )
 from .filters import TitleFilter
 from .serializers import (
-    CategorySerializer, CommentSerializer,
-    GenreSerializer, ReviewSerializer,
-    SignUpSerializer, TokenSerializer,
-    TitleReadSerializer, TitleWriteSerializer,
+    CategorySerializer,
+    CommentSerializer,
+    GenreSerializer,
+    ReviewSerializer,
+    SignUpSerializer,
+    TokenSerializer,
+    TitleReadSerializer,
+    TitleWriteSerializer,
     UserSerializer
 )
 from .utils import generate_confirmation_code, send_confirmation_code

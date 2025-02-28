@@ -1,7 +1,7 @@
-from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth.models import AbstractUser
+from django.db import models
 
 from .constants import (
     MAX_USERNAME_FIELD_LENGHT,
@@ -10,6 +10,7 @@ from .constants import (
     MAX_EMAIL_FIELD_LENGHT,
     MAX_ROLE_FIELD_LENGHT,
     MAX_NAME_LENGTH,
+    MAX_SLUG_FIELD_LENGTH,
     MIN_REVIEW_SCORE,
     MAX_REVIEW_SCORE,
     MAX_FIELD_LENGHT_STR
@@ -55,7 +56,9 @@ class CustomUser(AbstractUser):
 
     @property
     def is_admin(self):
-        return self.role == self.RoleChoices.ADMIN
+        return (self.is_superuser
+                or self.is_staff
+                or self.role == self.RoleChoices.ADMIN)
 
     @property
     def is_moderator(self):
@@ -77,11 +80,11 @@ class BaseCategoryGenre(models.Model):
     Базовая модель для категорий и жанров.
     """
     name = models.CharField(
-        max_length=256,
+        max_length=MAX_NAME_LENGTH,
         verbose_name='Название'
     )
     slug = models.SlugField(
-        max_length=50,
+        max_length=MAX_SLUG_FIELD_LENGTH,
         unique=True,
         verbose_name='Слаг'
     )

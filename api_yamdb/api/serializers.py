@@ -1,15 +1,26 @@
+import re
+
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
-import re
 
 from rest_framework import serializers
 
-from reviews.models import Category, Comment, Genre, Review, Title, User
-from .constants import (
-    BAD_USERNAME, MAX_CODE_LENGHT, USERNAME_SYMBOLS
+from reviews.models import (
+    Category,
+    Comment,
+    Genre,
+    Review,
+    Title,
+    User
 )
 from reviews.constants import (
-    MAX_USERNAME_FIELD_LENGHT, MAX_EMAIL_FIELD_LENGHT
+    MAX_USERNAME_FIELD_LENGHT,
+    MAX_EMAIL_FIELD_LENGHT
+)
+from .constants import (
+    SYSTEM_USERNAME,
+    MAX_CODE_LENGTH,
+    USERNAME_SYMBOLS
 )
 
 
@@ -24,7 +35,7 @@ class SignUpSerializer(serializers.ModelSerializer):
         fields = ('email', 'username')
 
     def validate_username(self, value):
-        if value in BAD_USERNAME:
+        if value in SYSTEM_USERNAME:
             raise serializers.ValidationError(
                 f'Неподходящее имя {value}. Попробуйте выбрать другое.'
             )
@@ -62,7 +73,7 @@ class TokenSerializer(serializers.Serializer):
     Производит валидацию полей confirmation_code и username.
     """
 
-    confirmation_code = serializers.CharField(max_length=MAX_CODE_LENGHT)
+    confirmation_code = serializers.CharField(max_length=MAX_CODE_LENGTH)
     username = serializers.CharField()
 
     def validate_username(self, value):
