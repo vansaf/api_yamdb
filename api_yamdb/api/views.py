@@ -104,13 +104,10 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-class CategoryViewSet(viewsets.ModelViewSet):
+class BaseCategoryGenreViewSet(viewsets.ModelViewSet):
     """
-    ViewSet для управления категориями произведений.
+    Базовый ViewSet для управления категориями и жанрами.
     """
-
-    queryset = Category.objects.all()
-    serializer_class = CategorySerializer
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
@@ -121,11 +118,18 @@ class CategoryViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
-class GenreViewSet(CategoryViewSet):
+class CategoryViewSet(BaseCategoryGenreViewSet):
+    """
+    ViewSet для управления категориями произведений.
+    """
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+
+
+class GenreViewSet(BaseCategoryGenreViewSet):
     """
     ViewSet для управления жанрами произведений.
     """
-
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
 
@@ -159,9 +163,6 @@ class ReviewsViewSet(viewsets.ModelViewSet):
     )
     http_method_names = ['get', 'post', 'patch', 'delete']
 
-    def get_queryset(self):
-        return Review.objects.filter(title_id=self.kwargs.get('title_id'))
-
     def perform_create(self, serializer):
         serializer.save(
             author=self.request.user, title_id=self.kwargs.get('title_id')
@@ -184,12 +185,6 @@ class CommentsViewSet(viewsets.ModelViewSet):
         IsAuthenticatedOrReadOnly, IsAdminIsModeratorIsAuthorOrReadOnly
     )
     http_method_names = ['get', 'post', 'patch', 'delete']
-
-    def get_queryset(self):
-        return Comment.objects.filter(
-            review__title_id=self.kwargs.get('title_id'),
-            review_id=self.kwargs.get('review_id')
-        )
 
     def perform_create(self, serializer):
         review = get_object_or_404(Review, id=self.kwargs.get('review_id'))
